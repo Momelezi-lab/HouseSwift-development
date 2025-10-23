@@ -1,0 +1,16 @@
+[build]
+  base = "house-hero-app"
+  publish = "public"
+
+[build.environment]
+  NODE_VERSION = "18"
+
+# Removed redirect rule that was preventing navigation to actual HTML files
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin" 
