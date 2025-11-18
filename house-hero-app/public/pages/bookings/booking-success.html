@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <title>Booking Confirmed | HomeSwift</title>
+    <meta name="theme-color" content="#22c55e" />
+    <link rel="stylesheet" href="/css/styles.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <style>
+      body,
+      .light {
+        background: #181f2a;
+      }
+      .dark body,
+      body.dark {
+        background: #111827;
+      }
+      .success-header {
+        background: #10169f;
+        color: #fff;
+        font-size: 2.2rem;
+        font-weight: 800;
+        padding: 2rem 1rem 1.5rem 1rem;
+        text-align: center;
+        border-radius: 0 0 24px 24px;
+        box-shadow: 0 4px 16px rgba(34, 197, 94, 0.1);
+        margin-bottom: 2.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 1.2rem;
+      }
+      .success-header i {
+        font-size: 2.5rem;
+      }
+      .booking-summary {
+        background: #f3f4f6;
+        border-radius: 18px;
+        padding: 2.5rem 2rem;
+        margin: 2rem 0 2.5rem 0;
+        box-shadow: 0 2px 12px rgba(34, 197, 94, 0.1);
+        max-width: 500px;
+        margin-left: auto;
+        margin-right: auto;
+      }
+      .booking-summary h2 {
+        color: #10169f;
+        margin-bottom: 1.5rem;
+        font-size: 1.5rem;
+        font-weight: 800;
+        text-align: left;
+      }
+      .booking-summary ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+      .booking-summary li {
+        margin-bottom: 0.9rem;
+        font-size: 1.15rem;
+        color: #222;
+        font-weight: 600;
+        display: flex;
+        gap: 0.5rem;
+      }
+      .booking-summary li strong {
+        width: 110px;
+        display: inline-block;
+        color: #16a34a;
+        font-weight: 700;
+      }
+      .booking-summary .booking-value {
+        color: #222;
+        font-weight: 500;
+      }
+      .dark .booking-summary {
+        background: #232a36;
+        color: #fff;
+        box-shadow: 0 2px 12px rgba(34, 197, 94, 0.18);
+      }
+      .dark .booking-summary li strong {
+        color: #10169f;
+      }
+      .dark .booking-summary .booking-value {
+        color: #fff;
+      }
+      .btn.login-btn {
+        display: block;
+        width: 100%;
+        max-width: 400px;
+        margin: 2.5rem auto 0 auto;
+        background: #10169f;
+        color: #fff;
+        font-size: 1.2rem;
+        font-weight: 700;
+        border-radius: 18px;
+        padding: 1rem 0;
+        box-shadow: 0 2px 8px rgba(34, 197, 94, 0.1);
+        border: none;
+        transition: background 0.2s, box-shadow 0.2s, transform 0.2s;
+        text-align: center;
+      }
+      .btn.login-btn:hover {
+        background: #10169f;
+        transform: scale(1.03);
+        box-shadow: 0 8px 24px rgba(34, 197, 94, 0.18);
+      }
+      @media (max-width: 600px) {
+        .success-header {
+          font-size: 1.3rem;
+          padding: 1.2rem 0.5rem 1rem 0.5rem;
+        }
+        .booking-summary {
+          padding: 1.2rem 0.7rem;
+        }
+      }
+    </style>
+  </head>
+  <body class="light">
+    <a href="../../index.html" class="back-btn" title="Back to Home">←</a>
+    <button id="toggle-dark" class="dark-mode-toggle" title="Toggle Dark Mode">
+      ☀️
+    </button>
+    <div class="success-header">
+      <i class="fa-solid fa-calendar-check"></i>
+      <span>Booking Confirmed</span>
+    </div>
+    <main class="main-section">
+      <div class="booking-summary">
+        <h2>Thank you for your booking!</h2>
+        <ul id="booking-details">
+          <!-- Booking details will be inserted here -->
+        </ul>
+      </div>
+      <a href="../../index.html" class="btn login-btn">Back to Home</a>
+    </main>
+    <script src="/js/config.js"></script>
+    <script>
+      // Get booking info from URL parameters
+      const urlParams = new URLSearchParams(window.location.search);
+      const requestId = urlParams.get('request_id');
+      const total = urlParams.get('total');
+
+      const details = document.getElementById("booking-details");
+      
+      if (requestId && total) {
+        details.innerHTML = `
+          <li><strong>Request ID:</strong> <span class="booking-value">#${requestId}</span></li>
+          <li><strong>Total Amount:</strong> <span class="booking-value">R${parseFloat(total).toFixed(2)}</span></li>
+          <li style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #ddd;"><strong>Status:</strong> <span class="booking-value">Pending Confirmation</span></li>
+        `;
+      } else {
+        details.innerHTML = `
+          <li><strong>Status:</strong> <span class="booking-value">Booking Received</span></li>
+          <li style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #ddd;">
+            <p style="color: #666; font-size: 0.9rem;">You'll receive a confirmation email within 2 hours with your assigned provider's details.</p>
+          </li>
+        `;
+      }
+    </script>
+    <script src="/js/config.js"></script>
+    <script src="/js/script.js"></script>
+    <script>
+      // Dark mode toggle logic
+      const toggleDark = document.getElementById("toggle-dark");
+      toggleDark.addEventListener("click", function () {
+        document.body.classList.toggle("dark");
+        if (document.body.classList.contains("dark")) {
+          toggleDark.textContent = "🌙";
+        } else {
+          toggleDark.textContent = "☀️";
+        }
+      });
+    </script>
+  </body>
+</html>
