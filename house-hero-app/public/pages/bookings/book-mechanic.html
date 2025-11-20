@@ -86,13 +86,7 @@
         color: #1f2937;
       }
 
-      #gmap {
-        height: 250px;
-        width: 100%;
-        border-radius: 10px;
-        margin-top: 0.5rem;
-        margin-bottom: 1rem;
-      }
+      /* Map removed - previously used Google Maps */
     </style>
   </head>
   <body class="bg-gray-50 text-gray-900 min-h-screen">
@@ -114,9 +108,7 @@
     </button>
 
     <!-- Header -->
-    <header
-      class="bg-blue-900 text-white py-8 px-4 shadow-lg relative"
-    >
+    <header class="bg-blue-900 text-white py-8 px-4 shadow-lg relative">
       <div class="max-w-4xl mx-auto">
         <a
           href="#"
@@ -219,6 +211,38 @@
 
           <div>
             <label
+              for="email"
+              class="block text-sm font-medium text-gray-700 mb-2"
+              >Email</label
+            >
+            <input
+              type="email"
+              id="email"
+              name="email"
+              required
+              placeholder="you@example.com"
+              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200 text-gray-900"
+            />
+          </div>
+
+          <div>
+            <label
+              for="phone"
+              class="block text-sm font-medium text-gray-700 mb-2"
+              >Phone</label
+            >
+            <input
+              type="tel"
+              id="phone"
+              name="phone"
+              required
+              placeholder="+27 71 000 0000"
+              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200 text-gray-900"
+            />
+          </div>
+
+          <div>
+            <label
               for="address"
               class="block text-sm font-medium text-gray-700 mb-2"
             >
@@ -232,7 +256,7 @@
               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200 text-gray-900"
               autocomplete="off"
             />
-            <div id="gmap"></div>
+            <!-- Map removed -->
             <div
               id="address-warning"
               class="text-red-600 font-medium mt-2 hidden"
@@ -338,52 +362,27 @@
     <script src="/js/config.js"></script>
     <script src="/js/script.js"></script>
     <script>
-      let gmap, gmarker, autocomplete;
-
-      function initGMap() {
-        gmap = new google.maps.Map(document.getElementById("gmap"), {
-          center: { lat: -25.9992, lng: 28.1266 },
-          zoom: 12,
-        });
-        gmarker = new google.maps.Marker({ map: gmap });
+      // Map functionality removed. Keep address warning behaviour based on manual input.
+      document.addEventListener("DOMContentLoaded", function () {
         const addressInput = document.getElementById("address");
-        autocomplete = new google.maps.places.Autocomplete(addressInput, {
-          types: ["geocode"],
-          componentRestrictions: { country: "za" },
-        });
-        autocomplete.addListener("place_changed", function () {
-          const place = autocomplete.getPlace();
-          if (!place.geometry) return;
-          gmap.setCenter(place.geometry.location);
-          gmarker.setPosition(place.geometry.location);
-          // Show warning if not Midrand or Johannesburg, but do not disable submit
-          const address = addressInput.value;
-          if (
-            !address.includes("Midrand") &&
-            !address.includes("Johannesburg")
-          ) {
-            document
-              .getElementById("address-warning")
-              .classList.remove("hidden");
-          } else {
-            document.getElementById("address-warning").classList.add("hidden");
-          }
-        });
-        // Also check on manual input
-        addressInput.addEventListener("input", function () {
-          const address = addressInput.value;
-          if (
-            !address.includes("Midrand") &&
-            !address.includes("Johannesburg")
-          ) {
-            document
-              .getElementById("address-warning")
-              .classList.remove("hidden");
-          } else {
-            document.getElementById("address-warning").classList.add("hidden");
-          }
-        });
-      }
+        if (addressInput) {
+          addressInput.addEventListener("input", function () {
+            const address = addressInput.value;
+            if (
+              !address.includes("Midrand") &&
+              !address.includes("Johannesburg")
+            ) {
+              document
+                .getElementById("address-warning")
+                .classList.remove("hidden");
+            } else {
+              document
+                .getElementById("address-warning")
+                .classList.add("hidden");
+            }
+          });
+        }
+      });
 
       // Dark mode functionality
       function initDarkMode() {
@@ -452,6 +451,8 @@
             e.preventDefault();
             const booking = {
               name: document.getElementById("name").value,
+              email: document.getElementById("email").value,
+              phone: document.getElementById("phone").value,
               address: document.getElementById("address").value,
               date: document.getElementById("date").value,
               time: document.getElementById("time").value,
@@ -481,10 +482,6 @@
           });
       });
     </script>
-    <script
-      src="https://maps.googleapis.com/maps/api/js?key=AIzaSyADPVyJOYeH7DIOD3x9jmJPmfG_LKvXzsc&libraries=places&callback=initGMap"
-      async
-      defer
-    ></script>
+    <!-- Google Maps removed -->
   </body>
 </html>
