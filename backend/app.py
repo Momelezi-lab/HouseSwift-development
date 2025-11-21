@@ -1,12 +1,19 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
+from flask_mail import Mail, Message
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
+import json
 from sqlalchemy import func
+<<<<<<< HEAD
 from datetime import datetime
 import smtplib
 from email.message import EmailMessage
+=======
+from datetime import datetime, timedelta
+from decimal import Decimal
+>>>>>>> 1e533b4361dde9579df50821049cbdd042dcef04
 
 app = Flask(__name__)
 
@@ -20,18 +27,27 @@ else:
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# CORS configuration for production
+# Email configuration
+app.config['MAIL_SERVER'] = os.environ.get('MAIL_SERVER', 'smtp.gmail.com')
+app.config['MAIL_PORT'] = int(os.environ.get('MAIL_PORT', 587))
+app.config['MAIL_USE_TLS'] = os.environ.get('MAIL_USE_TLS', 'true').lower() in ['true', 'on', '1']
+app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME', '')
+app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD', '')
+app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_DEFAULT_SENDER', 'noreply@homeswift.com')
+app.config['ADMIN_EMAIL'] = os.environ.get('ADMIN_EMAIL', 'admin@homeswift.com')
+app.config['ADMIN_PHONE'] = os.environ.get('ADMIN_PHONE', '+27 11 123 4567')
+
+mail = Mail(app)
+
+# CORS configuration - Allow all origins for development
 CORS(app, 
-     origins=[
-         "https://house-hero.netlify.app",           # Your Netlify frontend
-         "https://house-hero-backend.onrender.com",  # Your Render backend
-         "http://localhost:3000",                    # Local development
-         "http://127.0.0.1:5000",                   # Local development
-         "http://127.0.0.1:5001"                    # Local development
-     ],
-     methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-     allow_headers=["Content-Type", "Authorization"],
-     supports_credentials=True
+     resources={r"/api/*": {
+         "origins": "*",
+         "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+         "allow_headers": ["Content-Type", "Authorization"],
+         "supports_credentials": False
+     }},
+     supports_credentials=False
 )
 
 db = SQLAlchemy(app)
@@ -177,6 +193,7 @@ class ServiceProvider(db.Model):
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
 
+<<<<<<< HEAD
 
 def send_email(to_email: str, subject: str, body: str, reply_to: str = None) -> bool:
     """Send a plain-text email using SMTP. Relies on environment variables:
@@ -212,6 +229,125 @@ def send_email(to_email: str, subject: str, body: str, reply_to: str = None) -> 
     except Exception as e:
         print('send_email error:', e)
         return False
+=======
+# New models for dynamic pricing system
+class ServicePricing(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    service_category = db.Column(db.String(200), nullable=False)
+    service_type = db.Column(db.String(200), nullable=False)
+    item_description = db.Column(db.String(500))
+    provider_base_price = db.Column(db.Numeric(10, 2), nullable=False)
+    customer_display_price = db.Column(db.Numeric(10, 2), nullable=False)
+    color_surcharge_provider = db.Column(db.Numeric(10, 2), default=0)
+    color_surcharge_customer = db.Column(db.Numeric(10, 2), default=0)
+    is_white_applicable = db.Column(db.Boolean, default=False)
+    commission_percentage = db.Column(db.Numeric(5, 2), default=10)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'service_category': self.service_category,
+            'service_type': self.service_type,
+            'item_description': self.item_description,
+            'provider_base_price': float(self.provider_base_price),
+            'customer_display_price': float(self.customer_display_price),
+            'color_surcharge_provider': float(self.color_surcharge_provider),
+            'color_surcharge_customer': float(self.color_surcharge_customer),
+            'is_white_applicable': self.is_white_applicable,
+            'commission_percentage': float(self.commission_percentage)
+        }
+
+class Customer(db.Model):
+    customer_id = db.Column(db.Integer, primary_key=True)
+    customer_name = db.Column(db.String(120), nullable=False)
+    customer_email = db.Column(db.String(120), nullable=False)
+    customer_phone = db.Column(db.String(30), nullable=False)
+    saved_addresses = db.Column(db.Text)  # JSON string
+    total_bookings = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'customer_id': self.customer_id,
+            'customer_name': self.customer_name,
+            'customer_email': self.customer_email,
+            'customer_phone': self.customer_phone,
+            'saved_addresses': json.loads(self.saved_addresses) if self.saved_addresses else [],
+            'total_bookings': self.total_bookings,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+
+class ServiceRequest(db.Model):
+    request_id = db.Column(db.Integer, primary_key=True)
+    customer_id = db.Column(db.Integer, db.ForeignKey('customer.customer_id'), nullable=True)
+    customer_name = db.Column(db.String(120), nullable=False)
+    customer_email = db.Column(db.String(120), nullable=False)
+    customer_phone = db.Column(db.String(30), nullable=False)
+    customer_address = db.Column(db.String(500), nullable=False)
+    unit_number = db.Column(db.String(50))
+    complex_name = db.Column(db.String(200))
+    access_instructions = db.Column(db.Text)
+    preferred_date = db.Column(db.Date, nullable=False)
+    preferred_time = db.Column(db.Time, nullable=False)
+    additional_notes = db.Column(db.Text)
+    selected_items = db.Column(db.Text)  # JSON string
+    total_customer_paid = db.Column(db.Numeric(12, 2))
+    total_provider_payout = db.Column(db.Numeric(12, 2))
+    total_commission_earned = db.Column(db.Numeric(12, 2))
+    status = db.Column(db.String(50), default='pending')
+    priority = db.Column(db.String(20), default='medium')
+    assigned_provider_id = db.Column(db.Integer, db.ForeignKey('service_provider.id'), nullable=True)
+    provider_name = db.Column(db.String(120))
+    provider_phone = db.Column(db.String(30))
+    provider_email = db.Column(db.String(120))
+    payment_method = db.Column(db.String(20))
+    customer_payment_received = db.Column(db.Boolean, default=False)
+    provider_payment_made = db.Column(db.Boolean, default=False)
+    commission_collected = db.Column(db.Boolean, default=False)
+    admin_notes = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    confirmed_at = db.Column(db.DateTime)
+    completed_at = db.Column(db.DateTime)
+    reminder_sent_at = db.Column(db.DateTime)
+
+    def to_dict(self):
+        return {
+            'request_id': self.request_id,
+            'customer_id': self.customer_id,
+            'customer_name': self.customer_name,
+            'customer_email': self.customer_email,
+            'customer_phone': self.customer_phone,
+            'customer_address': self.customer_address,
+            'unit_number': self.unit_number,
+            'complex_name': self.complex_name,
+            'access_instructions': self.access_instructions,
+            'preferred_date': self.preferred_date.isoformat() if self.preferred_date else None,
+            'preferred_time': self.preferred_time.strftime('%H:%M') if self.preferred_time else None,
+            'additional_notes': self.additional_notes,
+            'selected_items': json.loads(self.selected_items) if self.selected_items else [],
+            'total_customer_paid': float(self.total_customer_paid) if self.total_customer_paid else 0,
+            'total_provider_payout': float(self.total_provider_payout) if self.total_provider_payout else 0,
+            'total_commission_earned': float(self.total_commission_earned) if self.total_commission_earned else 0,
+            'status': self.status,
+            'priority': self.priority,
+            'assigned_provider_id': self.assigned_provider_id,
+            'provider_name': self.provider_name,
+            'provider_phone': self.provider_phone,
+            'provider_email': self.provider_email,
+            'payment_method': self.payment_method,
+            'customer_payment_received': self.customer_payment_received,
+            'provider_payment_made': self.provider_payment_made,
+            'commission_collected': self.commission_collected,
+            'admin_notes': self.admin_notes,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'confirmed_at': self.confirmed_at.isoformat() if self.confirmed_at else None,
+            'completed_at': self.completed_at.isoformat() if self.completed_at else None
+        }
+>>>>>>> 1e533b4361dde9579df50821049cbdd042dcef04
 
 @app.route('/api/health')
 def health_check():
@@ -475,6 +611,12 @@ def get_providers():
     providers = ServiceProvider.query.all()
     return jsonify([p.to_dict() for p in providers])
 
+@app.route('/api/providers/<int:provider_id>', methods=['GET'])
+def get_provider(provider_id):
+    """Get a specific provider by ID"""
+    provider = ServiceProvider.query.get_or_404(provider_id)
+    return jsonify(provider.to_dict())
+
 @app.route('/api/providers/<int:provider_id>', methods=['PATCH'])
 def update_provider(provider_id):
     provider = ServiceProvider.query.get_or_404(provider_id)
@@ -508,6 +650,7 @@ def delete_provider(provider_id):
     db.session.commit()
     return jsonify({'message': 'Provider deleted'})
 
+<<<<<<< HEAD
 
 @app.route('/api/bookings/<int:booking_id>/assign', methods=['POST'])
 def assign_provider(booking_id):
@@ -583,11 +726,736 @@ def assign_provider(booking_id):
         print('Error sending customer confirmation email:', e)
 
     return jsonify({'message': 'Provider assigned and notifications sent', 'booking': booking.to_dict()})
+=======
+# ========== DYNAMIC PRICING SYSTEM ENDPOINTS ==========
+
+# Email helper functions
+def send_email(to, subject, body):
+    """Send email using Flask-Mail"""
+    try:
+        msg = Message(subject, recipients=[to], body=body)
+        mail.send(msg)
+        return True
+    except Exception as e:
+        print(f"Error sending email: {str(e)}")
+        return False
+
+def format_currency(amount):
+    """Format amount as South African Rand"""
+    return f"R{amount:,.2f}".replace(',', ' ')
+
+# Pricing endpoints
+@app.route('/api/pricing/categories', methods=['GET'])
+def get_categories():
+    """Get all unique service categories"""
+    categories = db.session.query(ServicePricing.service_category).distinct().all()
+    return jsonify([cat[0] for cat in categories])
+
+@app.route('/api/pricing', methods=['GET'])
+def get_pricing():
+    """Get pricing by category"""
+    category = request.args.get('category')
+    if not category:
+        return jsonify({'error': 'Category parameter required'}), 400
+    
+    pricing_items = ServicePricing.query.filter_by(service_category=category).all()
+    return jsonify([item.to_dict() for item in pricing_items])
+
+@app.route('/api/pricing/all', methods=['GET'])
+def get_all_pricing():
+    """Get all pricing items"""
+    pricing_items = ServicePricing.query.all()
+    return jsonify([item.to_dict() for item in pricing_items])
+
+# Service Request endpoints
+@app.route('/api/service-requests', methods=['POST'])
+def create_service_request():
+    """Create a new service request with backend calculations"""
+    try:
+        data = request.get_json()
+        
+        # Validate required fields
+        required_fields = ['customer_name', 'customer_email', 'customer_phone', 
+                         'customer_address', 'preferred_date', 'preferred_time', 'items']
+        for field in required_fields:
+            if not data.get(field):
+                return jsonify({'error': f'Missing required field: {field}'}), 400
+        
+        # Validate phone (10 digits for South Africa)
+        phone = data.get('customer_phone', '').replace(' ', '').replace('-', '').replace('+27', '0')
+        if len(phone) != 10 or not phone.isdigit():
+            return jsonify({'error': 'Phone number must be exactly 10 digits'}), 400
+        
+        # Validate date (cannot be in the past)
+        preferred_date = datetime.strptime(data.get('preferred_date'), '%Y-%m-%d').date()
+        if preferred_date < datetime.now().date():
+            return jsonify({'error': 'Preferred date cannot be in the past'}), 400
+        
+        # Start transaction
+        total_customer_paid = Decimal('0')
+        total_provider_payout = Decimal('0')
+        total_commission_earned = Decimal('0')
+        selected_items_array = []
+        
+        # Callout fee constant (R100 - charged to customer only, not part of provider payout)
+        CALLOUT_FEE = Decimal('100.00')
+        
+        # Process each item
+        for item_input in data.get('items', []):
+            category = item_input.get('category')
+            service_type = item_input.get('type')
+            quantity = int(item_input.get('quantity', 1))
+            is_white = item_input.get('is_white', False)
+            
+            if quantity < 1 or quantity > 10:
+                return jsonify({'error': 'Quantity must be between 1 and 10'}), 400
+            
+            # Get pricing from database (server-side validation)
+            pricing = ServicePricing.query.filter_by(
+                service_category=category,
+                service_type=service_type
+            ).first()
+            
+            if not pricing:
+                return jsonify({'error': f'Pricing not found for {category} - {service_type}'}), 404
+            
+            # Calculate prices
+            customer_line_price = Decimal(str(pricing.customer_display_price))
+            provider_line_price = Decimal(str(pricing.provider_base_price))
+            
+            if is_white and pricing.is_white_applicable:
+                customer_line_price += Decimal(str(pricing.color_surcharge_customer))
+                provider_line_price += Decimal(str(pricing.color_surcharge_provider))
+            
+            item_price_customer = customer_line_price * quantity
+            item_price_provider = provider_line_price * quantity
+            item_commission = item_price_customer - item_price_provider
+            
+            total_customer_paid += item_price_customer
+            total_provider_payout += item_price_provider
+            total_commission_earned += item_commission
+            
+            selected_items_array.append({
+                'category': pricing.service_category,
+                'type': pricing.service_type,
+                'is_white': is_white,
+                'quantity': quantity,
+                'customer_price': float(item_price_customer),
+                'provider_price': float(item_price_provider),
+                'commission': float(item_commission)
+            })
+        
+        # Add callout fee to customer total (NOT to provider payout - it's a HomeSwift fee)
+        # The callout fee is 100% commission for HomeSwift
+        total_customer_paid += CALLOUT_FEE
+        total_commission_earned += CALLOUT_FEE
+        
+        # Create or find customer
+        customer = Customer.query.filter_by(customer_email=data.get('customer_email')).first()
+        if not customer:
+            customer = Customer(
+                customer_name=data.get('customer_name'),
+                customer_email=data.get('customer_email'),
+                customer_phone=phone
+            )
+            db.session.add(customer)
+            db.session.flush()
+        else:
+            customer.total_bookings += 1
+        
+        # Create service request
+        preferred_time_obj = datetime.strptime(data.get('preferred_time'), '%H:%M').time()
+        
+        service_request = ServiceRequest(
+            customer_id=customer.customer_id,
+            customer_name=data.get('customer_name'),
+            customer_email=data.get('customer_email'),
+            customer_phone=phone,
+            customer_address=data.get('customer_address'),
+            unit_number=data.get('unit_number'),
+            complex_name=data.get('complex_name'),
+            access_instructions=data.get('access_instructions'),
+            preferred_date=preferred_date,
+            preferred_time=preferred_time_obj,
+            additional_notes=data.get('additional_notes'),
+            selected_items=json.dumps(selected_items_array),
+            total_customer_paid=total_customer_paid,
+            total_provider_payout=total_provider_payout,
+            total_commission_earned=total_commission_earned,
+            status='pending'
+        )
+        
+        db.session.add(service_request)
+        db.session.commit()
+        
+        # Send emails
+        send_booking_confirmation_email(service_request)
+        send_admin_alert_email(service_request)
+        
+        return jsonify({
+            'message': 'Service request created successfully',
+            'request_id': service_request.request_id,
+            'total_customer_paid': float(total_customer_paid)
+        }), 201
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+def send_booking_confirmation_email(request):
+    """Email 1: Customer confirmation - New service request received"""
+    items = json.loads(request.selected_items)
+    service_type = items[0].get('category', 'Cleaning Service') if items else 'Cleaning Service'
+    cleaning_type = items[0].get('type', '') if items else ''
+    
+    body = f"""Hi {request.customer_name},
+
+Thank you for booking with HomeSwift!
+
+Your Request Details:
+- Service Type: {service_type}
+- Date: {request.preferred_date}
+- Location: {request.customer_address}
+- Status: Pending Confirmation
+
+We're finding the best provider for you and will confirm within 2 hours.
+
+Request ID: {request.request_id}
+
+Questions? Reply to this email.
+
+- HomeSwift Team"""
+    
+    send_email(request.customer_email, f"Your service request has been received - HomeSwift", body)
+
+def send_admin_alert_email(request):
+    """Email 2: Admin alert - New booking received"""
+    items = json.loads(request.selected_items)
+    service_type = items[0].get('category', 'Cleaning Service') if items else 'Cleaning Service'
+    cleaning_type = items[0].get('type', '') if items else ''
+    items_text = ""
+    for item in items:
+        white_text = " (White)" if item.get('is_white') else ""
+        items_text += f"• {item.get('type')}{white_text} × {item.get('quantity')}\n"
+    
+    body = f"""New service request received!
+
+Customer: {request.customer_name}
+Phone: {request.customer_phone}
+Email: {request.customer_email}
+Service: {service_type} - {cleaning_type}
+Date: {request.preferred_date}
+Time: {request.preferred_time.strftime('%I:%M %p')}
+Address: {request.customer_address}
+{f'Unit: {request.unit_number}' if request.unit_number else ''}
+{f'Complex: {request.complex_name}' if request.complex_name else ''}
+Description: {request.additional_notes or 'No additional notes'}
+Priority: {request.priority or 'Medium'}
+
+Items Requested:
+{items_text}
+
+Request ID: {request.request_id}
+
+ACTION REQUIRED: Assign a provider and confirm booking."""
+    
+    send_email(app.config['ADMIN_EMAIL'], f"NEW BOOKING: {service_type} - {request.customer_address.split(',')[0] if request.customer_address else 'Location'}", body)
+
+@app.route('/api/service-requests', methods=['GET'])
+def get_service_requests():
+    """Get all service requests (admin)"""
+    status_filter = request.args.get('status')
+    category_filter = request.args.get('category')
+    search = request.args.get('search')
+    
+    query = ServiceRequest.query
+    
+    if status_filter:
+        query = query.filter_by(status=status_filter)
+    if category_filter:
+        query = query.filter(ServiceRequest.selected_items.contains(category_filter))
+    if search:
+        query = query.filter(
+            (ServiceRequest.customer_name.contains(search)) |
+            (ServiceRequest.request_id == search)
+        )
+    
+    requests = query.order_by(ServiceRequest.created_at.desc()).all()
+    return jsonify([req.to_dict() for req in requests])
+
+@app.route('/api/service-requests/<int:request_id>', methods=['GET'])
+def get_service_request(request_id):
+    """Get a specific service request"""
+    request_obj = ServiceRequest.query.get_or_404(request_id)
+    return jsonify(request_obj.to_dict())
+
+@app.route('/api/service-requests/<int:request_id>', methods=['PATCH'])
+def update_service_request(request_id):
+    """Update a service request (admin)"""
+    request_obj = ServiceRequest.query.get_or_404(request_id)
+    data = request.get_json()
+    
+    updateable_fields = [
+        'status', 'priority', 'assigned_provider_id', 'provider_name',
+        'provider_phone', 'provider_email', 'payment_method',
+        'customer_payment_received', 'provider_payment_made',
+        'commission_collected', 'admin_notes'
+    ]
+    
+    for field in updateable_fields:
+        if field in data:
+            setattr(request_obj, field, data[field])
+    
+    # Handle status changes
+    if 'status' in data:
+        if data['status'] == 'confirmed' and not request_obj.confirmed_at:
+            request_obj.confirmed_at = datetime.utcnow()
+            # Send provider assignment emails
+            if request_obj.assigned_provider_id:
+                send_provider_assignment_email(request_obj)
+                send_customer_provider_confirmed_email(request_obj)
+        elif data['status'] == 'in_progress' and request_obj.status != 'in_progress':
+            send_in_progress_email(request_obj)
+        elif data['status'] == 'completed' and not request_obj.completed_at:
+            request_obj.completed_at = datetime.utcnow()
+            send_completion_email(request_obj)
+            send_admin_completion_email(request_obj)
+    
+    request_obj.updated_at = datetime.utcnow()
+    db.session.commit()
+    
+    return jsonify({'message': 'Service request updated', 'request': request_obj.to_dict()})
+
+def send_provider_assignment_email(request):
+    """Email 3: Provider assignment - When status changes to Confirmed"""
+    if not request.provider_email:
+        return
+    
+    items = json.loads(request.selected_items)
+    service_type = items[0].get('category', 'Cleaning Service') if items else 'Cleaning Service'
+    cleaning_type = items[0].get('type', '') if items else ''
+    items_text = ""
+    for item in items:
+        white_text = " (White)" if item.get('is_white') else ""
+        items_text += f"• {item.get('type')}{white_text} × {item.get('quantity')}\n"
+    
+    # Create Google Maps link
+    maps_link = f"https://www.google.com/maps/search/?api=1&query={request.customer_address.replace(' ', '+')}"
+    
+    body = f"""Hi {request.provider_name},
+
+You have a new job assignment!
+
+Job Details:
+- Service: {service_type} - {cleaning_type}
+- Date: {request.preferred_date}
+- Time: {request.preferred_time.strftime('%I:%M %p')}
+- Location: {request.customer_address} ({maps_link})
+{f'Unit: {request.unit_number}' if request.unit_number else ''}
+{f'Complex: {request.complex_name}' if request.complex_name else ''}
+- Customer: {request.customer_name} - {request.customer_phone}
+
+Job Description:
+{request.additional_notes or 'Standard cleaning service'}
+
+Priority: {request.priority or 'Medium'}
+
+PLEASE CONFIRM:
+Reply to this email or call {app.config['ADMIN_PHONE']} to confirm you can take this job.
+
+Customer expects you at {request.preferred_time.strftime('%I:%M %p')} on {request.preferred_date}.
+
+Job ID: {request.request_id}"""
+    
+    send_email(request.provider_email, f"New Job Assignment - HomeSwift - {request.preferred_date}", body)
+
+def send_customer_provider_confirmed_email(request):
+    """Email 4: Customer confirmation - When provider is assigned"""
+    items = json.loads(request.selected_items)
+    service_type = items[0].get('category', 'Cleaning Service') if items else 'Cleaning Service'
+    
+    body = f"""Hi {request.customer_name},
+
+Great news! Your service has been confirmed.
+
+Booking Details:
+- Service: {service_type}
+- Date: {request.preferred_date}
+- Time: {request.preferred_time.strftime('%I:%M %p')}
+- Provider: {request.provider_name}
+- Provider Contact: {request.provider_phone}
+
+Your provider will arrive at the scheduled time.
+
+Estimated Price: {format_currency(request.total_customer_paid)} (final price may vary based on actual work)
+
+Need to reschedule? Reply to this email or call us at {app.config['ADMIN_PHONE']}.
+
+Request ID: {request.request_id}
+
+- HomeSwift Team"""
+    
+    send_email(request.customer_email, f"Your service is confirmed! - HomeSwift", body)
+
+def send_in_progress_email(request):
+    """Email 5: Job in progress notification"""
+    items = json.loads(request.selected_items)
+    service_type = items[0].get('category', 'Cleaning Service') if items else 'Cleaning Service'
+    
+    body = f"""Hi {request.customer_name},
+
+Your service is currently in progress.
+
+Provider {request.provider_name} is working on your {service_type}.
+
+We'll notify you once it's complete.
+
+Any issues? Contact us at {app.config['ADMIN_PHONE']}.
+
+- HomeSwift Team"""
+    
+    send_email(request.customer_email, f"Your service is in progress - HomeSwift", body)
+
+def send_completion_email(request):
+    """Email 6: Service completion - Customer"""
+    items = json.loads(request.selected_items)
+    service_type = items[0].get('category', 'Cleaning Service') if items else 'Cleaning Service'
+    
+    body = f"""Hi {request.customer_name},
+
+Your {service_type} has been completed!
+
+Final Amount: {format_currency(request.total_customer_paid)}
+Payment Method: {request.payment_method or 'Cash/Card'}
+
+HOW DID WE DO?
+We'd love your feedback! Rate your experience: [Link to feedback form]
+
+Need this service again? Book now and get 10% off: [Link to app]
+
+Thank you for using HomeSwift!
+
+Request ID: {request.request_id}"""
+    
+    send_email(request.customer_email, f"Service completed! How did we do? - HomeSwift", body)
+
+def send_admin_completion_email(request):
+    """Email 7: Admin - Job completion notification"""
+    items = json.loads(request.selected_items)
+    service_type = items[0].get('category', 'Cleaning Service') if items else 'Cleaning Service'
+    
+    body = f"""Job completed successfully!
+
+Customer: {request.customer_name}
+Provider: {request.provider_name}
+Service: {service_type}
+Amount: {format_currency(request.total_customer_paid)}
+Date: {request.preferred_date}
+
+Commission Due: {format_currency(request.total_commission_earned)} (10%)
+
+Request ID: {request.request_id}"""
+    
+    send_email(app.config['ADMIN_EMAIL'], f"Job Completed - {service_type} - {format_currency(request.total_customer_paid)}", body)
+
+def send_reminder_email(request):
+    """Email 8: Reminder (24 hours before service)"""
+    items = json.loads(request.selected_items)
+    service_type = items[0].get('category', 'Cleaning Service') if items else 'Cleaning Service'
+    
+    body = f"""Hi {request.customer_name},
+
+This is a friendly reminder about your upcoming service:
+
+- Service: {service_type}
+- Date: TOMORROW, {request.preferred_date}
+- Time: {request.preferred_time.strftime('%I:%M %p')}
+- Location: {request.customer_address}
+- Provider: {request.provider_name or 'TBA'} - {request.provider_phone or app.config['ADMIN_PHONE']}
+
+Please ensure someone is available to provide access.
+
+Need to reschedule? Call us at {app.config['ADMIN_PHONE']}.
+
+See you tomorrow!
+- HomeSwift Team"""
+    
+    send_email(request.customer_email, f"Reminder: Your service is tomorrow - HomeSwift", body)
+
+@app.route('/api/admin/send-reminders', methods=['POST'])
+def send_reminders():
+    """Send reminder emails for services scheduled 24 hours from now"""
+    try:
+        tomorrow = datetime.now().date() + timedelta(days=1)
+        requests = ServiceRequest.query.filter(
+            ServiceRequest.preferred_date == tomorrow,
+            ServiceRequest.status.in_(['confirmed', 'pending']),
+            ServiceRequest.reminder_sent_at.is_(None)
+        ).all()
+        
+        sent_count = 0
+        for request in requests:
+            if send_reminder_email(request):
+                request.reminder_sent_at = datetime.utcnow()
+                sent_count += 1
+        
+        db.session.commit()
+        return jsonify({'message': f'Sent {sent_count} reminder emails'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# Admin dashboard endpoints
+@app.route('/api/admin/stats', methods=['GET'])
+def get_admin_stats():
+    """Get admin dashboard statistics"""
+    total_bookings = ServiceRequest.query.count()
+    pending = ServiceRequest.query.filter_by(status='pending').count()
+    completed = ServiceRequest.query.filter_by(status='completed').count()
+    
+    # This month's revenue
+    now = datetime.utcnow()
+    month_start = datetime(now.year, now.month, 1)
+    this_month = ServiceRequest.query.filter(
+        ServiceRequest.created_at >= month_start,
+        ServiceRequest.status == 'completed'
+    ).all()
+    
+    this_month_revenue = sum(float(req.total_customer_paid) for req in this_month)
+    this_month_commission = sum(float(req.total_commission_earned) for req in this_month)
+    avg_commission = this_month_commission / len(this_month) if this_month else 0
+    
+    # Total commission
+    all_completed = ServiceRequest.query.filter_by(status='completed').all()
+    total_commission = sum(float(req.total_commission_earned) for req in all_completed)
+    
+    return jsonify({
+        'total_bookings': total_bookings,
+        'pending': pending,
+        'completed': completed,
+        'this_month_revenue': this_month_revenue,
+        'this_month_commission': this_month_commission,
+        'total_commission': total_commission,
+        'avg_commission': avg_commission
+    })
+
+@app.route('/api/admin/financial-report', methods=['GET'])
+def get_financial_report():
+    """Get financial report"""
+    from_date = request.args.get('from')
+    to_date = request.args.get('to')
+    
+    query = ServiceRequest.query.filter_by(status='completed')
+    
+    if from_date:
+        query = query.filter(ServiceRequest.created_at >= datetime.strptime(from_date, '%Y-%m-%d'))
+    if to_date:
+        query = query.filter(ServiceRequest.created_at <= datetime.strptime(to_date, '%Y-%m-%d'))
+    
+    requests = query.all()
+    
+    total_customer_payments = sum(float(req.total_customer_paid) for req in requests)
+    total_provider_payouts = sum(float(req.total_provider_payout) for req in requests)
+    total_commission = sum(float(req.total_commission_earned) for req in requests)
+    avg_commission = total_commission / len(requests) if requests else 0
+    
+    # Breakdown by category
+    category_breakdown = {}
+    for req in requests:
+        items = json.loads(req.selected_items)
+        for item in items:
+            cat = item.get('category')
+            if cat not in category_breakdown:
+                category_breakdown[cat] = {'count': 0, 'commission': 0}
+            category_breakdown[cat]['count'] += 1
+            category_breakdown[cat]['commission'] += item.get('commission', 0)
+    
+    return jsonify({
+        'total_customer_payments': total_customer_payments,
+        'total_provider_payouts': total_provider_payouts,
+        'total_commission': total_commission,
+        'avg_commission': avg_commission,
+        'number_of_jobs': len(requests),
+        'category_breakdown': category_breakdown
+    })
+
+# Seed pricing data endpoint (for initialization)
+@app.route('/api/admin/seed-pricing', methods=['POST'])
+def seed_pricing():
+    """Seed the service_pricing table with initial data"""
+    pricing_data = [
+        # Couch Deep Cleaning
+        ('Couch Deep Cleaning', '1 Seater Couch', '1 Seater Couch', 200, 220, 200, 220, True),
+        ('Couch Deep Cleaning', '2 Seater Couch', '2 Seater Couch', 400, 440, 200, 220, True),
+        ('Couch Deep Cleaning', '3 Seater Couch', '3 Seater Couch', 500, 550, 200, 220, True),
+        ('Couch Deep Cleaning', '4 Seater Couch', '4 Seater Couch', 600, 660, 200, 220, True),
+        ('Couch Deep Cleaning', '5 Seater Couch', '5 Seater Couch', 700, 770, 200, 220, True),
+        ('Couch Deep Cleaning', '6 Seater Couch', '6 Seater Couch', 800, 880, 200, 220, True),
+        ('Couch Deep Cleaning', '3 Seater L Couch', '3 Seater L Couch', 600, 660, 200, 220, True),
+        ('Couch Deep Cleaning', '4 Seater L Couch', '4 Seater L Couch', 700, 770, 200, 220, True),
+        ('Couch Deep Cleaning', '5 Seater L Couch', '5 Seater L Couch', 800, 880, 200, 220, True),
+        ('Couch Deep Cleaning', '6 Seater L Couch', '6 Seater L Couch', 900, 990, 200, 220, True),
+        # Carpet Deep Cleaning
+        ('Carpet Deep Cleaning', 'Extra-Small', 'Extra-Small', 250, 275, 0, 0, False),
+        ('Carpet Deep Cleaning', 'Small', 'Small', 300, 330, 0, 0, False),
+        ('Carpet Deep Cleaning', 'Medium', 'Medium', 350, 385, 0, 0, False),
+        ('Carpet Deep Cleaning', 'Large', 'Large', 400, 440, 0, 0, False),
+        ('Carpet Deep Cleaning', 'X-Large', 'X-Large', 450, 495, 0, 0, False),
+        # Fitted Carpet Deep Cleaning
+        ('Fitted Carpet Deep Cleaning', 'Standard Room', 'Standard Room', 450, 495, 0, 0, False),
+        ('Fitted Carpet Deep Cleaning', 'Master Bedroom', 'Master Bedroom', 600, 660, 0, 0, False),
+        # Mattress Deep Cleaning
+        ('Mattress Deep Cleaning', 'Single', 'Single', 350, 385, 0, 0, False),
+        ('Mattress Deep Cleaning', 'Double', 'Double', 450, 495, 0, 0, False),
+        ('Mattress Deep Cleaning', 'Queen', 'Queen', 500, 550, 0, 0, False),
+        ('Mattress Deep Cleaning', 'King', 'King', 550, 605, 0, 0, False),
+        # Headboard Deep Cleaning
+        ('Headboard Deep Cleaning', 'Single', 'Single Headboard', 200, 220, 100, 110, True),
+        ('Headboard Deep Cleaning', 'Double', 'Double Headboard', 250, 275, 100, 110, True),
+        ('Headboard Deep Cleaning', 'Queen', 'Queen Headboard', 300, 330, 100, 110, True),
+        ('Headboard Deep Cleaning', 'King', 'King Headboard', 350, 385, 100, 110, True),
+        # Sleigh Bed Deep Cleaning
+        ('Sleigh Bed Deep Cleaning', 'Single', 'Single Sleigh Bed', 300, 330, 150, 165, True),
+        ('Sleigh Bed Deep Cleaning', 'Double', 'Double Sleigh Bed', 350, 385, 150, 165, True),
+        ('Sleigh Bed Deep Cleaning', 'Queen', 'Queen Sleigh Bed', 380, 418, 150, 165, True),
+        ('Sleigh Bed Deep Cleaning', 'King', 'King Sleigh Bed', 400, 440, 150, 165, True),
+        # Standard Apartment Cleaning
+        ('Standard Apartment Cleaning', 'Bachelor Apartment', 'Bachelor Apartment', 300, 330, 0, 0, False),
+        ('Standard Apartment Cleaning', '1 Bedroom Apartment', '1BR Apartment', 350, 385, 0, 0, False),
+        ('Standard Apartment Cleaning', '2 Bedroom Apartment', '2BR Apartment', 400, 440, 0, 0, False),
+        ('Standard Apartment Cleaning', '3 Bedroom Apartment', '3BR Apartment', 450, 495, 0, 0, False),
+        # Apartment Spring Cleaning
+        ('Apartment Spring Cleaning', 'Bachelor Apartment', 'Bachelor Apartment Spring', 600, 660, 0, 0, False),
+        ('Apartment Spring Cleaning', '1 Bedroom Apartment', '1BR Spring', 700, 770, 0, 0, False),
+        ('Apartment Spring Cleaning', '2 Bedroom Apartment', '2BR Spring', 800, 880, 0, 0, False),
+        ('Apartment Spring Cleaning', '3 Bedroom Apartment', '3BR Spring', 1000, 1100, 0, 0, False),
+        # Apartment Deep Cleaning
+        ('Apartment Deep Cleaning', 'Bachelor Apartment', 'Empty/With Items - Bachelor', 1800, 1980, 0, 0, False),
+        ('Apartment Deep Cleaning', '1 Bedroom Apartment', '1BR Deep', 2000, 2200, 0, 0, False),
+        ('Apartment Deep Cleaning', '2 Bedroom Apartment', '2BR Deep', 2500, 2750, 0, 0, False),
+        ('Apartment Deep Cleaning', '3 Bedroom Apartment', '3BR Deep', 3000, 3300, 0, 0, False),
+        # Empty Apartment Deep Cleaning
+        ('Empty Apartment Deep Cleaning', 'Bachelor Apartment', 'Empty Bachelor', 1200, 1320, 0, 0, False),
+        ('Empty Apartment Deep Cleaning', '1 Bedroom Apartment', 'Empty 1BR', 1300, 1430, 0, 0, False),
+        ('Empty Apartment Deep Cleaning', '2 Bedroom Apartment', 'Empty 2BR', 1500, 1650, 0, 0, False),
+        ('Empty Apartment Deep Cleaning', '3 Bedroom Apartment', 'Empty 3BR', 1800, 1980, 0, 0, False),
+        # House Spring Cleaning
+        ('House Spring Cleaning', '2 Bedroom House', '2BR Spring', 1800, 1980, 0, 0, False),
+        ('House Spring Cleaning', '3 Bedroom House', '3BR Spring', 2100, 2310, 0, 0, False),
+        ('House Spring Cleaning', '4 Bedroom House', '4BR Spring', 2500, 2750, 0, 0, False),
+        ('House Spring Cleaning', '5 Bedroom House', '5BR Spring', 3000, 3300, 0, 0, False),
+        # House Deep Cleaning
+        ('House Deep Cleaning', '2 Bedroom House', '2BR Deep', 3600, 3960, 0, 0, False),
+        ('House Deep Cleaning', '3 Bedroom House', '3BR Deep', 4500, 4950, 0, 0, False),
+        ('House Deep Cleaning', '4 Bedroom House', '4BR Deep', 5400, 5940, 0, 0, False),
+        ('House Deep Cleaning', '5 Bedroom House', '5BR Deep', 6500, 7150, 0, 0, False),
+        # Empty House Deep Cleaning
+        ('Empty House Deep Cleaning', '2 Bedroom House', 'Empty 2BR', 2500, 2750, 0, 0, False),
+        ('Empty House Deep Cleaning', '3 Bedroom House', 'Empty 3BR', 3500, 3850, 0, 0, False),
+        ('Empty House Deep Cleaning', '4 Bedroom House', 'Empty 4BR', 4500, 4950, 0, 0, False),
+        ('Empty House Deep Cleaning', '5 Bedroom House', 'Empty 5BR', 5500, 6050, 0, 0, False),
+    ]
+    
+    count = 0
+    for data in pricing_data:
+        existing = ServicePricing.query.filter_by(
+            service_category=data[0],
+            service_type=data[1]
+        ).first()
+        if not existing:
+            pricing = ServicePricing(
+                service_category=data[0],
+                service_type=data[1],
+                item_description=data[2],
+                provider_base_price=data[3],
+                customer_display_price=data[4],
+                color_surcharge_provider=data[5],
+                color_surcharge_customer=data[6],
+                is_white_applicable=data[7],
+                commission_percentage=10
+            )
+            db.session.add(pricing)
+            count += 1
+    
+    db.session.commit()
+    return jsonify({'message': f'Seeded {count} pricing records'})
+>>>>>>> 1e533b4361dde9579df50821049cbdd042dcef04
 
 if __name__ == '__main__':
     import sys
     with app.app_context():
         db.create_all()
+        # Seed pricing data if table is empty
+        if ServicePricing.query.count() == 0:
+            # Call seed function directly
+            pricing_data = [
+                ('Couch Deep Cleaning', '1 Seater Couch', '1 Seater Couch', 200, 220, 200, 220, True),
+                ('Couch Deep Cleaning', '2 Seater Couch', '2 Seater Couch', 400, 440, 200, 220, True),
+                ('Couch Deep Cleaning', '3 Seater Couch', '3 Seater Couch', 500, 550, 200, 220, True),
+                ('Couch Deep Cleaning', '4 Seater Couch', '4 Seater Couch', 600, 660, 200, 220, True),
+                ('Couch Deep Cleaning', '5 Seater Couch', '5 Seater Couch', 700, 770, 200, 220, True),
+                ('Couch Deep Cleaning', '6 Seater Couch', '6 Seater Couch', 800, 880, 200, 220, True),
+                ('Couch Deep Cleaning', '3 Seater L Couch', '3 Seater L Couch', 600, 660, 200, 220, True),
+                ('Couch Deep Cleaning', '4 Seater L Couch', '4 Seater L Couch', 700, 770, 200, 220, True),
+                ('Couch Deep Cleaning', '5 Seater L Couch', '5 Seater L Couch', 800, 880, 200, 220, True),
+                ('Couch Deep Cleaning', '6 Seater L Couch', '6 Seater L Couch', 900, 990, 200, 220, True),
+                ('Carpet Deep Cleaning', 'Extra-Small', 'Extra-Small', 250, 275, 0, 0, False),
+                ('Carpet Deep Cleaning', 'Small', 'Small', 300, 330, 0, 0, False),
+                ('Carpet Deep Cleaning', 'Medium', 'Medium', 350, 385, 0, 0, False),
+                ('Carpet Deep Cleaning', 'Large', 'Large', 400, 440, 0, 0, False),
+                ('Carpet Deep Cleaning', 'X-Large', 'X-Large', 450, 495, 0, 0, False),
+                ('Fitted Carpet Deep Cleaning', 'Standard Room', 'Standard Room', 450, 495, 0, 0, False),
+                ('Fitted Carpet Deep Cleaning', 'Master Bedroom', 'Master Bedroom', 600, 660, 0, 0, False),
+                ('Mattress Deep Cleaning', 'Single', 'Single', 350, 385, 0, 0, False),
+                ('Mattress Deep Cleaning', 'Double', 'Double', 450, 495, 0, 0, False),
+                ('Mattress Deep Cleaning', 'Queen', 'Queen', 500, 550, 0, 0, False),
+                ('Mattress Deep Cleaning', 'King', 'King', 550, 605, 0, 0, False),
+                ('Headboard Deep Cleaning', 'Single', 'Single Headboard', 200, 220, 100, 110, True),
+                ('Headboard Deep Cleaning', 'Double', 'Double Headboard', 250, 275, 100, 110, True),
+                ('Headboard Deep Cleaning', 'Queen', 'Queen Headboard', 300, 330, 100, 110, True),
+                ('Headboard Deep Cleaning', 'King', 'King Headboard', 350, 385, 100, 110, True),
+                ('Sleigh Bed Deep Cleaning', 'Single', 'Single Sleigh Bed', 300, 330, 150, 165, True),
+                ('Sleigh Bed Deep Cleaning', 'Double', 'Double Sleigh Bed', 350, 385, 150, 165, True),
+                ('Sleigh Bed Deep Cleaning', 'Queen', 'Queen Sleigh Bed', 380, 418, 150, 165, True),
+                ('Sleigh Bed Deep Cleaning', 'King', 'King Sleigh Bed', 400, 440, 150, 165, True),
+                ('Standard Apartment Cleaning', 'Bachelor Apartment', 'Bachelor Apartment', 300, 330, 0, 0, False),
+                ('Standard Apartment Cleaning', '1 Bedroom Apartment', '1BR Apartment', 350, 385, 0, 0, False),
+                ('Standard Apartment Cleaning', '2 Bedroom Apartment', '2BR Apartment', 400, 440, 0, 0, False),
+                ('Standard Apartment Cleaning', '3 Bedroom Apartment', '3BR Apartment', 450, 495, 0, 0, False),
+                ('Apartment Spring Cleaning', 'Bachelor Apartment', 'Bachelor Apartment Spring', 600, 660, 0, 0, False),
+                ('Apartment Spring Cleaning', '1 Bedroom Apartment', '1BR Spring', 700, 770, 0, 0, False),
+                ('Apartment Spring Cleaning', '2 Bedroom Apartment', '2BR Spring', 800, 880, 0, 0, False),
+                ('Apartment Spring Cleaning', '3 Bedroom Apartment', '3BR Spring', 1000, 1100, 0, 0, False),
+                ('Apartment Deep Cleaning', 'Bachelor Apartment', 'Empty/With Items - Bachelor', 1800, 1980, 0, 0, False),
+                ('Apartment Deep Cleaning', '1 Bedroom Apartment', '1BR Deep', 2000, 2200, 0, 0, False),
+                ('Apartment Deep Cleaning', '2 Bedroom Apartment', '2BR Deep', 2500, 2750, 0, 0, False),
+                ('Apartment Deep Cleaning', '3 Bedroom Apartment', '3BR Deep', 3000, 3300, 0, 0, False),
+                ('Empty Apartment Deep Cleaning', 'Bachelor Apartment', 'Empty Bachelor', 1200, 1320, 0, 0, False),
+                ('Empty Apartment Deep Cleaning', '1 Bedroom Apartment', 'Empty 1BR', 1300, 1430, 0, 0, False),
+                ('Empty Apartment Deep Cleaning', '2 Bedroom Apartment', 'Empty 2BR', 1500, 1650, 0, 0, False),
+                ('Empty Apartment Deep Cleaning', '3 Bedroom Apartment', 'Empty 3BR', 1800, 1980, 0, 0, False),
+                ('House Spring Cleaning', '2 Bedroom House', '2BR Spring', 1800, 1980, 0, 0, False),
+                ('House Spring Cleaning', '3 Bedroom House', '3BR Spring', 2100, 2310, 0, 0, False),
+                ('House Spring Cleaning', '4 Bedroom House', '4BR Spring', 2500, 2750, 0, 0, False),
+                ('House Spring Cleaning', '5 Bedroom House', '5BR Spring', 3000, 3300, 0, 0, False),
+                ('House Deep Cleaning', '2 Bedroom House', '2BR Deep', 3600, 3960, 0, 0, False),
+                ('House Deep Cleaning', '3 Bedroom House', '3BR Deep', 4500, 4950, 0, 0, False),
+                ('House Deep Cleaning', '4 Bedroom House', '4BR Deep', 5400, 5940, 0, 0, False),
+                ('House Deep Cleaning', '5 Bedroom House', '5BR Deep', 6500, 7150, 0, 0, False),
+                ('Empty House Deep Cleaning', '2 Bedroom House', 'Empty 2BR', 2500, 2750, 0, 0, False),
+                ('Empty House Deep Cleaning', '3 Bedroom House', 'Empty 3BR', 3500, 3850, 0, 0, False),
+                ('Empty House Deep Cleaning', '4 Bedroom House', 'Empty 4BR', 4500, 4950, 0, 0, False),
+                ('Empty House Deep Cleaning', '5 Bedroom House', 'Empty 5BR', 5500, 6050, 0, 0, False),
+            ]
+            for data in pricing_data:
+                pricing = ServicePricing(
+                    service_category=data[0], service_type=data[1], item_description=data[2],
+                    provider_base_price=data[3], customer_display_price=data[4],
+                    color_surcharge_provider=data[5], color_surcharge_customer=data[6],
+                    is_white_applicable=data[7], commission_percentage=10
+                )
+                db.session.add(pricing)
+            db.session.commit()
+            print("Pricing data seeded successfully")
         if '--cleanup-duplicates' in sys.argv:
             # Remove duplicate bookings
             from sqlalchemy import and_

@@ -81,6 +81,7 @@
     <a
       href="../../public/index.html"
       class="fixed top-6 left-6 z-50 bg-white/80 backdrop-blur-sm hover:bg-white text-gray-700 font-bold py-3 px-4 rounded-full shadow-lg transition-all duration-200 hover:shadow-xl"
+      data-direct-link
     >
       ← Back
     </a>
@@ -95,7 +96,7 @@
 
     <!-- Header -->
     <header
-      class="relative overflow-hidden bg-blue-900 via-blue-700 to-indigo-700 text-white py-16 px-6"
+      class="relative overflow-hidden bg-blue-900 text-white py-16 px-6"
     >
       <div class="absolute inset-0 bg-black/10"></div>
       <div class="relative max-w-6xl mx-auto text-center">
@@ -111,14 +112,6 @@
       </div>
     </header>
 
-    <!-- Sidebar Menu Button -->
-    <button
-      id="sidebar-toggle"
-      class="fixed top-6 right-6 z-40 bg-white/80 backdrop-blur-sm hover:bg-white text-gray-700 font-bold py-3 px-4 rounded-full shadow-lg transition-all duration-200 hover:shadow-xl"
-    >
-      ☰ Menu
-    </button>
-
     <!-- Sidebar -->
     <aside
       id="sidebar"
@@ -133,36 +126,43 @@
         </div>
         <nav class="space-y-3">
           <a
+            href="../../public/index.html"
+            class="flex items-center py-3 px-4 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all duration-200 nav-link"
+          >
+            <span class="text-lg mr-3">🏠</span>
+            <span class="font-medium">Home</span>
+          </a>
+          <a
             href="../dashboard/profile.html"
-            class="flex items-center py-3 px-4 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all duration-200"
+            class="flex items-center py-3 px-4 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all duration-200 nav-link"
           >
             <span class="text-lg mr-3">👤</span>
             <span class="font-medium">Profile</span>
           </a>
           <a
             href="../dashboard/settings.html"
-            class="flex items-center py-3 px-4 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all duration-200"
+            class="flex items-center py-3 px-4 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all duration-200 nav-link"
           >
             <span class="text-lg mr-3">⚙️</span>
             <span class="font-medium">Settings</span>
           </a>
           <a
             href="../services/complaints.html"
-            class="flex items-center py-3 px-4 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all duration-200"
+            class="flex items-center py-3 px-4 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all duration-200 nav-link"
           >
             <span class="text-lg mr-3">📝</span>
             <span class="font-medium">Complaints</span>
           </a>
           <a
             href="contact.html"
-            class="flex items-center py-3 px-4 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all duration-200"
+            class="flex items-center py-3 px-4 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all duration-200 nav-link"
           >
             <span class="text-lg mr-3">📞</span>
             <span class="font-medium">Contact</span>
           </a>
           <a
             href="faq.html"
-            class="flex items-center py-3 px-4 bg-blue-100 text-blue-700 rounded-xl transition-all duration-200"
+            class="flex items-center py-3 px-4 bg-blue-100 text-blue-700 rounded-xl transition-all duration-200 nav-link"
           >
             <span class="text-lg mr-3">❓</span>
             <span class="font-medium">FAQ</span>
@@ -843,26 +843,17 @@
         }
       }
 
-      // Sidebar functionality
+      // Sidebar functionality (menu button removed - sidebar accessible via navigation links only)
       function initSidebarMenu() {
-        const sidebarToggle = document.getElementById("sidebar-toggle");
         const sidebar = document.getElementById("sidebar");
         const sidebarOverlay = document.getElementById("sidebar-overlay");
         const closeSidebar = document.getElementById("close-sidebar");
 
-        function toggleSidebar() {
-          sidebar.classList.toggle("translate-x-full");
-          sidebarOverlay.classList.toggle("hidden");
-        }
-
         function closeSidebarMenu() {
-          sidebar.classList.add("translate-x-full");
-          sidebarOverlay.classList.add("hidden");
+          if (sidebar) sidebar.classList.add("translate-x-full");
+          if (sidebarOverlay) sidebarOverlay.classList.add("hidden");
         }
 
-        if (sidebarToggle) {
-          sidebarToggle.addEventListener("click", toggleSidebar);
-        }
         if (closeSidebar) {
           closeSidebar.addEventListener("click", closeSidebarMenu);
         }
@@ -874,7 +865,16 @@
       // FAQ toggle functionality
       function toggleFAQ(button) {
         const content = button.nextElementSibling;
-        content.classList.toggle("hidden");
+        const icon = button.querySelector('span:last-child');
+        const isHidden = content.classList.contains("hidden");
+        
+        if (isHidden) {
+          content.classList.remove("hidden");
+          if (icon) icon.textContent = "−";
+        } else {
+          content.classList.add("hidden");
+          if (icon) icon.textContent = "+";
+        }
       }
 
       // Initialize when DOM is loaded
@@ -883,5 +883,6 @@
         initSidebarMenu();
       });
     </script>
+    <script src="../../public/js/navigation.js"></script>
   </body>
 </html>
