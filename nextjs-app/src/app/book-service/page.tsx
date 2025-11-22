@@ -44,10 +44,25 @@ export default function BookServicePage() {
   const [cartItems, setCartItems] = useState<CartItem[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [today, setToday] = useState<string>('')
+  const [userEmail, setUserEmail] = useState<string>('')
 
   // Set today's date on client side only to avoid hydration mismatch
   useEffect(() => {
     setToday(new Date().toISOString().split('T')[0])
+    // Get logged-in user's email
+    if (typeof window !== 'undefined') {
+      const userData = localStorage.getItem('user')
+      if (userData) {
+        try {
+          const user = JSON.parse(userData)
+          if (user?.email) {
+            setUserEmail(user.email)
+          }
+        } catch (e) {
+          console.error('Error parsing user data:', e)
+        }
+      }
+    }
   }, [])
 
   // Handle category from query parameter
@@ -511,9 +526,14 @@ export default function BookServicePage() {
                       <input
                         type="email"
                         name="customer_email"
+                        value={userEmail}
+                        onChange={(e) => setUserEmail(e.target.value)}
                         required
                         className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#1A531A] focus:border-[#1A531A] transition-all text-gray-900"
                       />
+                      {userEmail && (
+                        <p className="text-xs text-gray-500 mt-1">Using your account email</p>
+                      )}
                     </div>
                   </div>
                   <div>

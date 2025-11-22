@@ -82,12 +82,24 @@ export function Navigation() {
               </Link>
             ))}
             {isLoggedIn ? (
-              <button
-                onClick={handleLogout}
-                className="ml-4 px-6 py-2 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 hover:shadow-lg transform hover:scale-105 transition-all"
-              >
-                Logout
-              </button>
+              <>
+                <Link
+                  href="/profile"
+                  className={`ml-4 px-6 py-2 rounded-xl font-bold hover:shadow-lg transform hover:scale-105 transition-all ${
+                    currentPath === '/profile'
+                      ? 'bg-[#1A531A] text-white'
+                      : 'bg-[#90B890] text-white hover:bg-[#1A531A]'
+                  }`}
+                >
+                  👤 Profile
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="ml-2 px-6 py-2 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 hover:shadow-lg transform hover:scale-105 transition-all"
+                >
+                  Logout
+                </button>
+              </>
             ) : (
               <Link
                 href="/login"
@@ -126,15 +138,28 @@ export function Navigation() {
               </Link>
             ))}
             {isLoggedIn ? (
-              <button
-                onClick={() => {
-                  setIsOpen(false)
-                  handleLogout()
-                }}
-                className="block mt-4 px-4 py-3 bg-red-600 text-white rounded-xl font-bold text-center hover:bg-red-700 w-full"
-              >
-                Logout
-              </button>
+              <>
+                <Link
+                  href="/profile"
+                  onClick={() => setIsOpen(false)}
+                  className={`block mt-4 px-4 py-3 rounded-xl font-bold text-center w-full ${
+                    currentPath === '/profile'
+                      ? 'bg-[#1A531A] text-white'
+                      : 'bg-[#90B890] text-white hover:bg-[#1A531A]'
+                  }`}
+                >
+                  👤 Profile
+                </Link>
+                <button
+                  onClick={() => {
+                    setIsOpen(false)
+                    handleLogout()
+                  }}
+                  className="block mt-2 px-4 py-3 bg-red-600 text-white rounded-xl font-bold text-center hover:bg-red-700 w-full"
+                >
+                  Logout
+                </button>
+              </>
             ) : (
               <Link
                 href="/login"

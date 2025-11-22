@@ -212,6 +212,9 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status')
     const category = searchParams.get('category')
     const search = searchParams.get('search')
+    const customerEmail = searchParams.get('customerEmail')?.trim()
+
+    console.log('GET /api/service-requests - customerEmail param:', customerEmail)
 
     const where: any = {}
     if (status) where.status = status
@@ -225,7 +228,13 @@ export async function GET(request: NextRequest) {
       ]
     }
 
-    const requests = await prisma.serviceRequest.findMany({
+    // Store email filter for post-processing (SQLite doesn't support case-insensitive mode)
+    const emailFilter = customerEmail?.toLowerCase()
+
+    console.log('GET /api/service-requests - emailFilter:', emailFilter)
+    console.log('GET /api/service-requests - where clause:', JSON.stringify(where))
+
+    let requests = await prisma.serviceRequest.findMany({
       where,
       orderBy: { createdAt: 'desc' },
       include: {
@@ -234,6 +243,33 @@ export async function GET(request: NextRequest) {
       },
     })
 
+    console.log('GET /api/service-requests - Total requests found:', requests.length)
+    const allRequestEmails = requests.map(r => r.customerEmail)
+    if (requests.length > 0) {
+      console.log('GET /api/service-requests - Sample request emails:', 
+        allRequestEmails.slice(0, 3))
+    }
+
+    // Case-insensitive email filtering for SQLite
+    if (emailFilter) {
+      const beforeCount = requests.length
+      requests = requests.filter((req) => {
+        const reqEmail = req.customerEmail?.trim().toLowerCase()
+        const matches = reqEmail === emailFilter
+        if (!matches && reqEmail) {
+          console.log(`Email mismatch - Looking for: "${emailFilter}", Found: "${reqEmail}"`)
+        }
+        return matches
+      })
+      console.log('GET /api/service-requests - After email filter:', 
+        `${beforeCount} -> ${requests.length} requests`)
+      if (beforeCount > 0 && requests.length === 0) {
+        console.log('WARNING: Found', beforeCount, 'requests but none matched email:', emailFilter)
+        console.log('All emails in DB:', allRequestEmails.slice(0, 10).map(e => `"${e}"`))
+      }
+    }
+
+    console.log('GET /api/service-requests - Returning:', requests.length, 'requests')
     return NextResponse.json(requests)
   } catch (error: any) {
     console.error('Get service requests error:', error)

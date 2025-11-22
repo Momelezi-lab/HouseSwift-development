@@ -26,7 +26,7 @@ export const serviceRequestApi = {
     const response = await api.post('/api/service-requests', data)
     return response.data
   },
-  getAll: async (params?: { status?: string; category?: string; search?: string }) => {
+  getAll: async (params?: { status?: string; category?: string; search?: string; customerEmail?: string }) => {
     const response = await api.get('/api/service-requests', { params })
     return response.data
   },
@@ -70,6 +70,29 @@ export const authApi = {
   },
   login: async (data: { email: string; password: string }) => {
     const response = await api.post('/api/auth/login', data)
+    return response.data
+  },
+}
+
+export const complaintApi = {
+  getAll: async (params?: { email?: string; status?: string }) => {
+    const response = await api.get('/api/complaints', { params })
+    return response.data
+  },
+  getById: async (id: number) => {
+    const response = await api.get(`/api/complaints/${id}`)
+    return response.data
+  },
+  create: async (data: any) => {
+    const response = await api.post('/api/complaints', data)
+    return response.data
+  },
+  update: async (id: number, data: any) => {
+    const response = await api.patch(`/api/complaints/${id}`, data)
+    return response.data
+  },
+  delete: async (id: number) => {
+    const response = await api.delete(`/api/complaints/${id}`)
     return response.data
   },
 }

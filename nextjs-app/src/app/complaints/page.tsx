@@ -15,6 +15,27 @@ export default function ComplaintsPage() {
     date: new Date().toISOString().split("T")[0],
   });
 
+  // Auto-fill email from logged-in user
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const userData = localStorage.getItem("user");
+      if (userData) {
+        try {
+          const user = JSON.parse(userData);
+          if (user?.email) {
+            setFormData((prev) => ({
+              ...prev,
+              email: user.email,
+              name: user.name || prev.name,
+            }));
+          }
+        } catch (e) {
+          console.error("Error parsing user data:", e);
+        }
+      }
+    }
+  }, []);
+
   const complaintMutation = useMutation({
     mutationFn: (data: any) => api.post("/api/complaints", data),
     onSuccess: () => {
@@ -48,16 +69,14 @@ export default function ComplaintsPage() {
 
   // Force input text to be visible after render - Chrome specific fix
   useEffect(() => {
+    // Only apply these fixes in Chrome
+    const isChrome = navigator.userAgent.includes("Chrome");
+    if (!isChrome) return;
+
     const forceInputColors = () => {
       const inputs = document.querySelectorAll("input, textarea, select");
       inputs.forEach((input) => {
         if (input instanceof HTMLElement) {
-          // Remove any existing color styles first
-          input.style.removeProperty("color");
-          input.style.removeProperty("background-color");
-          input.style.removeProperty("-webkit-text-fill-color");
-          input.style.removeProperty("caret-color");
-
           // Force black text with highest priority
           input.style.setProperty("color", "#000000", "important");
           input.style.setProperty("background-color", "#ffffff", "important");
@@ -67,51 +86,16 @@ export default function ComplaintsPage() {
             "important"
           );
           input.style.setProperty("caret-color", "#000000", "important");
-
-          // Chrome-specific: Also set the actual style attribute directly
-          (input as any).style.color = "#000000";
-          (input as any).style.backgroundColor = "#ffffff";
-          (input as any).style.webkitTextFillColor = "#000000";
-          (input as any).style.caretColor = "#000000";
         }
       });
     };
 
-    // Run immediately
+    // Run immediately and after a short delay
     forceInputColors();
-
-    // Run after delays to catch any late style applications
-    const timeouts = [
-      setTimeout(forceInputColors, 50),
-      setTimeout(forceInputColors, 100),
-      setTimeout(forceInputColors, 300),
-      setTimeout(forceInputColors, 500),
-    ];
-
-    // Watch for any style changes and reapply
-    const observer = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
-        if (
-          mutation.type === "attributes" &&
-          mutation.attributeName === "style"
-        ) {
-          forceInputColors();
-        }
-      });
-    });
-
-    // Observe all inputs for style changes
-    const inputs = document.querySelectorAll("input, textarea, select");
-    inputs.forEach((input) => {
-      observer.observe(input, {
-        attributes: true,
-        attributeFilter: ["style", "class"],
-      });
-    });
+    const timeout = setTimeout(forceInputColors, 100);
 
     return () => {
-      timeouts.forEach(clearTimeout);
-      observer.disconnect();
+      clearTimeout(timeout);
     };
   }, []);
 
