@@ -308,7 +308,7 @@ function ProviderModal({
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 required
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#1A531A] focus:border-[#1A531A]"
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#1A531A] focus:border-[#1A531A] text-gray-900"
               />
             </div>
             <div>
@@ -318,7 +318,7 @@ function ProviderModal({
                 value={formData.serviceType}
                 onChange={(e) => setFormData({ ...formData, serviceType: e.target.value })}
                 required
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#1A531A] focus:border-[#1A531A]"
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#1A531A] focus:border-[#1A531A] text-gray-900"
               />
             </div>
           </div>
@@ -330,7 +330,7 @@ function ProviderModal({
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 required
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#1A531A] focus:border-[#1A531A]"
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#1A531A] focus:border-[#1A531A] text-gray-900"
               />
             </div>
             <div>
@@ -340,7 +340,7 @@ function ProviderModal({
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 required
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#1A531A] focus:border-[#1A531A]"
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#1A531A] focus:border-[#1A531A] text-gray-900"
               />
             </div>
           </div>
@@ -350,7 +350,7 @@ function ProviderModal({
               type="text"
               value={formData.address}
               onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-              className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#1A531A] focus:border-[#1A531A]"
+              className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#1A531A] focus:border-[#1A531A] text-gray-900"
             />
           </div>
           <div className="grid grid-cols-3 gap-4">
@@ -362,7 +362,7 @@ function ProviderModal({
                 onChange={(e) =>
                   setFormData({ ...formData, experienceYears: parseInt(e.target.value) || 0 })
                 }
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#1A531A] focus:border-[#1A531A]"
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#1A531A] focus:border-[#1A531A] text-gray-900"
               />
             </div>
             <div>
@@ -374,7 +374,7 @@ function ProviderModal({
                 onChange={(e) =>
                   setFormData({ ...formData, hourlyRate: parseFloat(e.target.value) || 0 })
                 }
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#1A531A] focus:border-[#1A531A]"
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#1A531A] focus:border-[#1A531A] text-gray-900"
               />
             </div>
             <div>
@@ -388,7 +388,7 @@ function ProviderModal({
                 onChange={(e) =>
                   setFormData({ ...formData, rating: parseFloat(e.target.value) || 0 })
                 }
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#1A531A] focus:border-[#1A531A]"
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#1A531A] focus:border-[#1A531A] text-gray-900"
               />
             </div>
           </div>

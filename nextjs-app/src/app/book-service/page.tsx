@@ -401,7 +401,7 @@ export default function BookServicePage() {
                         name="preferred_date"
                         min={today || undefined}
                         required
-                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#1A531A] focus:border-[#1A531A] transition-all bg-white"
+                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#1A531A] focus:border-[#1A531A] transition-all bg-white text-gray-900"
                       />
                     </div>
                     <div>
@@ -411,7 +411,7 @@ export default function BookServicePage() {
                       <select
                         name="preferred_time"
                         required
-                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#1A531A] focus:border-[#1A531A] transition-all bg-white"
+                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#1A531A] focus:border-[#1A531A] transition-all bg-white text-gray-900"
                       >
                         {timeSlots.map((slot) => (
                           <option key={slot.value} value={slot.value}>
@@ -429,7 +429,7 @@ export default function BookServicePage() {
                       type="text"
                       name="customer_address"
                       required
-                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#1A531A] focus:border-[#1A531A] transition-all"
+                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#1A531A] focus:border-[#1A531A] transition-all text-gray-900"
                     />
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -440,7 +440,7 @@ export default function BookServicePage() {
                       <input
                         type="text"
                         name="unit_number"
-                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#1A531A] focus:border-[#1A531A] transition-all"
+                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#1A531A] focus:border-[#1A531A] transition-all text-gray-900"
                       />
                     </div>
                     <div>
@@ -450,7 +450,7 @@ export default function BookServicePage() {
                       <input
                         type="text"
                         name="complex_name"
-                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#1A531A] focus:border-[#1A531A] transition-all"
+                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#1A531A] focus:border-[#1A531A] transition-all text-gray-900"
                       />
                     </div>
                   </div>
@@ -462,7 +462,7 @@ export default function BookServicePage() {
                       name="access_instructions"
                       rows={3}
                       placeholder="Gate code, building access, etc."
-                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-none"
+                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-none text-gray-900"
                     />
                   </div>
                 </div>
@@ -485,7 +485,7 @@ export default function BookServicePage() {
                       type="text"
                       name="customer_name"
                       required
-                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#1A531A] focus:border-[#1A531A] transition-all"
+                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#1A531A] focus:border-[#1A531A] transition-all text-gray-900"
                     />
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -500,7 +500,7 @@ export default function BookServicePage() {
                         maxLength={10}
                         pattern="[0-9]{10}"
                         required
-                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#1A531A] focus:border-[#1A531A] transition-all"
+                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#1A531A] focus:border-[#1A531A] transition-all text-gray-900"
                       />
                       <p className="text-xs text-gray-500 mt-1">10 digits (South African format)</p>
                     </div>
@@ -512,7 +512,7 @@ export default function BookServicePage() {
                         type="email"
                         name="customer_email"
                         required
-                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#1A531A] focus:border-[#1A531A] transition-all"
+                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#1A531A] focus:border-[#1A531A] transition-all text-gray-900"
                       />
                     </div>
                   </div>
@@ -524,7 +524,7 @@ export default function BookServicePage() {
                       name="additional_notes"
                       rows={3}
                       placeholder="Any special requests or details we should know?"
-                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-none"
+                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-none text-gray-900"
                     />
                   </div>
                 </div>
