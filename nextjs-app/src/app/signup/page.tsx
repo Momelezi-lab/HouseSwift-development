@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useMutation } from '@tanstack/react-query'
 import { authApi } from '@/lib/api'
 import Link from 'next/link'
+import { Logo } from '@/components/Logo'
 
 export default function SignupPage() {
   const router = useRouter()
@@ -40,15 +41,13 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-600 via-blue-700 to-cyan-600 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-white flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="bg-white rounded-3xl shadow-2xl p-8">
           {/* Logo/Header */}
           <div className="text-center mb-8">
-            <div className="inline-block mb-4">
-              <div className="w-20 h-20 bg-gradient-to-br from-blue-600 to-cyan-600 rounded-2xl flex items-center justify-center text-4xl shadow-lg">
-                🏠
-              </div>
+            <div className="flex justify-center mb-4">
+              <Logo size="lg" />
             </div>
             <h1 className="text-4xl font-extrabold text-gray-900 mb-2">Create Account</h1>
             <p className="text-gray-600">Join HomeSwift today</p>
@@ -116,7 +115,7 @@ export default function SignupPage() {
             <button
               type="submit"
               disabled={signupMutation.isPending}
-              className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 text-white py-4 rounded-xl font-bold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all disabled:opacity-50 disabled:transform-none"
+              className="w-full bg-[#1A531A] text-white py-4 rounded-xl font-bold text-lg shadow-xl hover:bg-[#1A531A]/90 hover:shadow-2xl transform hover:scale-105 transition-all disabled:opacity-50 disabled:transform-none"
             >
               {signupMutation.isPending ? (
                 <span className="flex items-center justify-center gap-2">

@@ -33,12 +33,20 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Remove password hash from response
+    // Remove password hash from response, explicitly include role
     const { passwordHash: _, ...userResponse } = user
+    
+    // Ensure role is included (default to 'customer' if not set)
+    const userWithRole = {
+      ...userResponse,
+      role: user.role || 'customer',
+    }
+
+    console.log('Login API - User role:', user.role, 'User response:', userWithRole)
 
     return NextResponse.json({
       message: 'Login successful',
-      user: userResponse,
+      user: userWithRole,
     })
   } catch (error: any) {
     console.error('Login error:', error)

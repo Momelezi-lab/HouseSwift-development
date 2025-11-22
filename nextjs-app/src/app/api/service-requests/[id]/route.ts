@@ -56,26 +56,41 @@ export async function PATCH(
     ]
 
     const updateData: any = {}
+    
+    // Prisma automatically maps camelCase to snake_case via @map directives
+    // So we use the Prisma model field names (camelCase)
     for (const field of updateableFields) {
       if (data[field] !== undefined) {
-        const dbField = field
-          .replace(/([A-Z])/g, '_$1')
-          .toLowerCase()
-          .replace(/^_/, '')
-        updateData[dbField] = data[field]
+        updateData[field] = data[field]
+      }
+    }
+    
+    // If assignedProviderId is set, fetch and update provider details
+    if (data.assignedProviderId !== undefined && data.assignedProviderId !== null && data.assignedProviderId !== '') {
+      const providerId = parseInt(data.assignedProviderId.toString())
+      const provider = await prisma.serviceProvider.findUnique({
+        where: { id: providerId },
+      })
+      if (provider) {
+        updateData.providerName = provider.name
+        updateData.providerPhone = provider.phone
+        updateData.providerEmail = provider.email
       }
     }
 
     // Handle status changes
-    if (data.status === 'confirmed' && !data.confirmedAt) {
+    if (data.status === 'confirmed' && !updateData.confirmedAt) {
       updateData.confirmedAt = new Date()
       // Send provider assignment emails
       const request = await prisma.serviceRequest.findUnique({
         where: { requestId: id },
       })
-      if (request?.assignedProviderId) {
+      const providerId = data.assignedProviderId !== undefined && data.assignedProviderId !== null && data.assignedProviderId !== ''
+        ? parseInt(data.assignedProviderId.toString()) 
+        : request?.assignedProviderId
+      if (providerId) {
         const provider = await prisma.serviceProvider.findUnique({
-          where: { id: request.assignedProviderId },
+          where: { id: providerId },
         })
         if (provider) {
           const templates = generateEmailTemplates()
@@ -141,8 +156,13 @@ export async function PATCH(
     })
   } catch (error: any) {
     console.error('Update service request error:', error)
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      meta: error.meta,
+    })
     return NextResponse.json(
-      { error: 'Failed to update service request' },
+      { error: error.message || 'Failed to update service request', details: error.meta },
       { status: 500 }
     )
   }

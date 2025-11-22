@@ -465,9 +465,8 @@ document.addEventListener("DOMContentLoaded", () => {
           localStorage.setItem("lastBooking", JSON.stringify(bookingData));
           // Clear auto-save
           clearAutoSave("booking-form");
-          // Redirect to success page or show message
-          window.location.href =
-            "/house-hero-app/pages/bookings/booking-success.html";
+          // Redirect to success page or show message (relative path)
+          window.location.href = "booking-success.html";
         } else {
           const data = await response.json();
           showToast(data.error || "Booking failed. Please try again.", "error");

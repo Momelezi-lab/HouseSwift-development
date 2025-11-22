@@ -18,10 +18,10 @@ export function Button({
     'font-bold rounded-xl transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none'
   
   const variants = {
-    primary: 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white hover:from-blue-700 hover:to-cyan-700 shadow-xl hover:shadow-2xl',
+    primary: 'bg-[#1A531A] text-white hover:bg-[#1A531A]/90 shadow-xl hover:shadow-2xl',
     secondary: 'bg-gray-200 text-gray-800 hover:bg-gray-300 shadow-lg',
-    danger: 'bg-gradient-to-r from-red-600 to-pink-600 text-white hover:from-red-700 hover:to-pink-700 shadow-xl',
-    outline: 'border-2 border-blue-600 text-blue-600 hover:bg-blue-50 shadow-lg',
+    danger: 'bg-red-600 text-white hover:bg-red-700 shadow-xl',
+    outline: 'border-2 border-[#1A531A] text-[#1A531A] hover:bg-[#90B890]/10 shadow-lg',
   }
   
   const sizes = {

@@ -9,15 +9,15 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        primary: "#3b82f6",
-        secondary: "#64748b",
-        accent: "#f59e0b",
+        primary: "#1A531A", // Dark green from logo
+        secondary: "#90B890", // Light green from logo
+        accent: "#1A531A",
         success: "#10b981",
         danger: "#ef4444",
         warning: "#f59e0b",
-        info: "#3b82f6",
+        info: "#1A531A",
         light: "#f8fafc",
-        dark: "#1e293b",
+        dark: "#1A531A",
       },
     },
   },

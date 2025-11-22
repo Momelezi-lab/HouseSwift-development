@@ -324,9 +324,9 @@ export default function ServiceDetailsPage() {
   const details = serviceDetails[category] || serviceDetails['Standard Apartment Cleaning']
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50">
+    <div className="min-h-screen bg-white">
       {/* Header */}
-      <header className="bg-gradient-to-r from-blue-600 via-blue-700 to-cyan-600 text-white py-12 px-4 shadow-2xl">
+      <header className="bg-[#1A531A] text-white py-12 px-4 shadow-2xl">
         <div className="max-w-6xl mx-auto">
           <Link
             href="/services/cleaning"
@@ -335,7 +335,7 @@ export default function ServiceDetailsPage() {
             ← Back to Services
           </Link>
           <h1 className="text-4xl md:text-5xl font-extrabold mb-4">{details.title}</h1>
-          <p className="text-xl text-blue-100">{details.description}</p>
+          <p className="text-xl text-white/90">{details.description}</p>
         </div>
       </header>
 
@@ -349,7 +349,7 @@ export default function ServiceDetailsPage() {
                 className="border-b border-gray-200 pb-8 last:border-b-0 last:pb-0"
               >
                 <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-6 flex items-center gap-3">
-                  <span className="w-10 h-10 bg-gradient-to-br from-blue-600 to-cyan-600 rounded-lg flex items-center justify-center text-white font-bold">
+                  <span className="w-10 h-10 bg-[#1A531A] rounded-lg flex items-center justify-center text-white font-bold">
                     {index + 1}
                   </span>
                   {section.title}
@@ -360,7 +360,7 @@ export default function ServiceDetailsPage() {
                       key={itemIndex}
                       className="flex items-start gap-3 text-gray-700"
                     >
-                      <span className="text-green-600 font-bold mt-1 flex-shrink-0">✓</span>
+                      <span className="text-[#1A531A] font-bold mt-1 flex-shrink-0">✓</span>
                       <span className="text-lg">{item}</span>
                     </li>
                   ))}
@@ -371,14 +371,14 @@ export default function ServiceDetailsPage() {
 
           {/* CTA */}
           <div className="mt-12 pt-8 border-t border-gray-200">
-            <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl p-6 text-center">
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">Ready to Book?</h3>
+            <div className="bg-[#90B890]/10 rounded-xl p-6 text-center border border-[#90B890]">
+              <h3 className="text-2xl font-bold text-[#1A531A] mb-4">Ready to Book?</h3>
               <p className="text-gray-600 mb-6">
                 Get started by selecting this service and booking your preferred date
               </p>
               <Link
                 href={`/book-service?category=${encodeURIComponent(category)}`}
-                className="inline-flex items-center gap-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white px-10 py-4 rounded-xl font-bold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300"
+                className="inline-flex items-center gap-3 bg-[#1A531A] text-white px-10 py-4 rounded-xl font-bold text-lg shadow-xl hover:bg-[#1A531A]/90 hover:shadow-2xl transform hover:scale-105 transition-all duration-300"
               >
                 <span>🚀</span>
                 <span>Book This Service Now</span>

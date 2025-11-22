@@ -10,4 +10,11 @@ MarkupSafe==3.0.2
 Werkzeug==3.1.3
 gunicorn==21.2.0
 SQLAlchemy==1.4.53
+<<<<<<< HEAD
+
+# Testing
+pytest==7.4.2
+pytest-flask==1.2.0
+=======
 python-dateutil==2.9.0
+>>>>>>> 1e533b4361dde9579df50821049cbdd042dcef04

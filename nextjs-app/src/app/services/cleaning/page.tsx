@@ -4,13 +4,13 @@ import Link from 'next/link'
 
 export default function CleaningServicePage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50">
+    <div className="min-h-screen bg-white">
       {/* Header */}
-      <header className="bg-gradient-to-r from-blue-600 via-blue-700 to-cyan-600 text-white py-16 px-4 shadow-2xl">
+      <header className="bg-[#1A531A] text-white py-16 px-4 shadow-2xl">
         <div className="max-w-4xl mx-auto text-center">
           <div className="inline-block mb-6 text-6xl animate-bounce">🧹</div>
           <h1 className="text-5xl md:text-6xl font-extrabold mb-4">Professional Cleaning Services</h1>
-          <p className="text-xl text-blue-100">Deep cleaning solutions for your home</p>
+          <p className="text-xl text-white/90">Deep cleaning solutions for your home</p>
         </div>
       </header>
 
@@ -20,19 +20,19 @@ export default function CleaningServicePage() {
         <section className="bg-white rounded-2xl shadow-xl p-8 mb-8 border border-gray-100">
           <h2 className="text-3xl font-bold text-gray-900 mb-6">Why Choose Our Cleaning Services?</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="text-center p-6 bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl">
+            <div className="text-center p-6 bg-[#90B890]/10 rounded-xl border border-[#90B890]">
               <div className="text-4xl mb-4">✨</div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Professional Team</h3>
+              <h3 className="text-xl font-bold text-[#1A531A] mb-2">Professional Team</h3>
               <p className="text-gray-600">Trained and experienced cleaners</p>
             </div>
-            <div className="text-center p-6 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl">
+            <div className="text-center p-6 bg-[#90B890]/10 rounded-xl border border-[#90B890]">
               <div className="text-4xl mb-4">🌿</div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Eco-Friendly</h3>
+              <h3 className="text-xl font-bold text-[#1A531A] mb-2">Eco-Friendly</h3>
               <p className="text-gray-600">Safe cleaning products for your family</p>
             </div>
-            <div className="text-center p-6 bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl">
+            <div className="text-center p-6 bg-[#90B890]/10 rounded-xl border border-[#90B890]">
               <div className="text-4xl mb-4">⚡</div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Fast & Efficient</h3>
+              <h3 className="text-xl font-bold text-[#1A531A] mb-2">Fast & Efficient</h3>
               <p className="text-gray-600">Quick turnaround times</p>
             </div>
           </div>
@@ -106,7 +106,7 @@ export default function CleaningServicePage() {
         </section>
 
         {/* Process */}
-        <section className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-2xl shadow-xl p-8 mb-8 border border-blue-200">
+        <section className="bg-[#90B890]/10 rounded-2xl shadow-xl p-8 mb-8 border border-[#90B890]">
           <h2 className="text-3xl font-bold text-gray-900 mb-6">How It Works</h2>
           <div className="space-y-6">
             <ProcessStep number={1} title="Book Your Service" description="Select your cleaning service and preferred date/time" />
@@ -120,7 +120,7 @@ export default function CleaningServicePage() {
         <div className="text-center">
           <Link
             href="/book-service"
-            className="inline-flex items-center gap-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white px-10 py-5 rounded-2xl font-bold text-lg shadow-2xl hover:shadow-blue-500/50 transform hover:scale-105 transition-all duration-300 hover:from-blue-700 hover:to-cyan-700"
+            className="inline-flex items-center gap-3 bg-[#1A531A] text-white px-10 py-5 rounded-2xl font-bold text-lg shadow-2xl hover:bg-[#1A531A]/90 transform hover:scale-105 transition-all duration-300"
           >
             <span>🚀</span>
             <span>Book Cleaning Service Now</span>
@@ -144,7 +144,7 @@ function ServiceTypeCard({
   category?: string
 }) {
   const content = (
-    <div className="p-6 bg-gradient-to-br from-white to-gray-50 border-2 border-gray-200 rounded-xl hover:border-blue-400 hover:shadow-lg transition-all">
+    <div className="p-6 bg-white border-2 border-[#90B890] rounded-xl hover:border-[#1A531A] hover:shadow-lg transition-all">
       <div className="text-4xl mb-3">{icon}</div>
       <h3 className="text-xl font-bold text-gray-900 mb-2">{title}</h3>
       <p className="text-gray-600 mb-3">{description}</p>
@@ -182,7 +182,7 @@ function ProcessStep({
 }) {
   return (
     <div className="flex items-start gap-4">
-      <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-cyan-600 rounded-full flex items-center justify-center text-white font-bold text-xl flex-shrink-0">
+      <div className="w-12 h-12 bg-[#1A531A] rounded-full flex items-center justify-center text-white font-bold text-xl flex-shrink-0">
         {number}
       </div>
       <div>

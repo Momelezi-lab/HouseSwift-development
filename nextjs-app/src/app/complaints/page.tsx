@@ -43,8 +43,8 @@ export default function ComplaintsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50">
-      <header className="bg-gradient-to-r from-blue-600 via-blue-700 to-cyan-600 text-white py-12 px-4 shadow-2xl">
+    <div className="min-h-screen bg-white">
+      <header className="bg-[#1A531A] text-white py-12 px-4 shadow-2xl">
         <div className="max-w-4xl mx-auto">
           <Link
             href="/"
@@ -53,7 +53,7 @@ export default function ComplaintsPage() {
             ← Back to Home
           </Link>
           <h1 className="text-4xl md:text-5xl font-extrabold mb-2">Submit a Complaint</h1>
-          <p className="text-xl text-blue-100">We take your feedback seriously</p>
+          <p className="text-xl text-white/90">We take your feedback seriously</p>
         </div>
       </header>
 
@@ -69,7 +69,7 @@ export default function ComplaintsPage() {
                   value={formData.name}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#1A531A] focus:border-[#1A531A] transition-all"
                 />
               </div>
               <div>
@@ -80,7 +80,7 @@ export default function ComplaintsPage() {
                   value={formData.email}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#1A531A] focus:border-[#1A531A] transition-all"
                 />
               </div>
             </div>
@@ -141,7 +141,7 @@ export default function ComplaintsPage() {
             <button
               type="submit"
               disabled={complaintMutation.isPending}
-              className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 text-white py-4 rounded-xl font-bold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all disabled:opacity-50 disabled:transform-none"
+              className="w-full bg-[#1A531A] text-white py-4 rounded-xl font-bold text-lg shadow-xl hover:bg-[#1A531A]/90 hover:shadow-2xl transform hover:scale-105 transition-all disabled:opacity-50 disabled:transform-none"
             >
               {complaintMutation.isPending ? 'Submitting...' : 'Submit Complaint'}
             </button>

@@ -79,9 +79,8 @@
   <body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
     <!-- Back Button -->
     <a
-      href="../../index.html"
+      href="../index.html"
       class="fixed top-6 left-6 z-50 bg-white/80 backdrop-blur-sm hover:bg-white text-gray-700 font-bold py-3 px-4 rounded-full shadow-lg transition-all duration-200 hover:shadow-xl"
-      data-direct-link
     >
       ← Back
     </a>
@@ -96,7 +95,7 @@
 
     <!-- Header -->
     <header
-      class="relative overflow-hidden bg-blue-900 text-white py-16 px-6"
+      class="relative overflow-hidden bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 text-white py-16 px-6"
     >
       <div class="absolute inset-0 bg-black/10"></div>
       <div class="relative max-w-6xl mx-auto text-center">
@@ -113,6 +112,14 @@
       </div>
     </header>
 
+    <!-- Sidebar Menu Button -->
+    <button
+      id="sidebar-toggle"
+      class="fixed top-6 right-6 z-40 bg-white/80 backdrop-blur-sm hover:bg-white text-gray-700 font-bold py-3 px-4 rounded-full shadow-lg transition-all duration-200 hover:shadow-xl"
+    >
+      ☰ Menu
+    </button>
+
     <!-- Sidebar -->
     <aside
       id="sidebar"
@@ -127,43 +134,36 @@
         </div>
         <nav class="space-y-3">
           <a
-            href="../../index.html"
-            class="flex items-center py-3 px-4 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all duration-200 nav-link"
-          >
-            <span class="text-lg mr-3">🏠</span>
-            <span class="font-medium">Home</span>
-          </a>
-          <a
             href="profile.html"
-            class="flex items-center py-3 px-4 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all duration-200 nav-link"
+            class="flex items-center py-3 px-4 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all duration-200"
           >
             <span class="text-lg mr-3">👤</span>
             <span class="font-medium">Profile</span>
           </a>
           <a
             href="settings.html"
-            class="flex items-center py-3 px-4 bg-blue-100 text-blue-700 rounded-xl transition-all duration-200 nav-link"
+            class="flex items-center py-3 px-4 bg-blue-100 text-blue-700 rounded-xl transition-all duration-200"
           >
             <span class="text-lg mr-3">⚙️</span>
             <span class="font-medium">Settings</span>
           </a>
           <a
             href="../services/complaints.html"
-            class="flex items-center py-3 px-4 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all duration-200 nav-link"
+            class="flex items-center py-3 px-4 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all duration-200"
           >
             <span class="text-lg mr-3">📝</span>
             <span class="font-medium">Complaints</span>
           </a>
           <a
             href="../info/contact.html"
-            class="flex items-center py-3 px-4 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all duration-200 nav-link"
+            class="flex items-center py-3 px-4 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all duration-200"
           >
             <span class="text-lg mr-3">📞</span>
             <span class="font-medium">Contact</span>
           </a>
           <a
             href="../info/faq.html"
-            class="flex items-center py-3 px-4 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all duration-200 nav-link"
+            class="flex items-center py-3 px-4 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all duration-200"
           >
             <span class="text-lg mr-3">❓</span>
             <span class="font-medium">FAQ</span>
@@ -719,17 +719,26 @@
         }
       }
 
-      // Sidebar functionality (menu button removed - sidebar accessible via navigation links only)
+      // Sidebar functionality
       function initSidebarMenu() {
+        const sidebarToggle = document.getElementById("sidebar-toggle");
         const sidebar = document.getElementById("sidebar");
         const sidebarOverlay = document.getElementById("sidebar-overlay");
         const closeSidebar = document.getElementById("close-sidebar");
 
-        function closeSidebarMenu() {
-          if (sidebar) sidebar.classList.add("translate-x-full");
-          if (sidebarOverlay) sidebarOverlay.classList.add("hidden");
+        function toggleSidebar() {
+          sidebar.classList.toggle("translate-x-full");
+          sidebarOverlay.classList.toggle("hidden");
         }
 
+        function closeSidebarMenu() {
+          sidebar.classList.add("translate-x-full");
+          sidebarOverlay.classList.add("hidden");
+        }
+
+        if (sidebarToggle) {
+          sidebarToggle.addEventListener("click", toggleSidebar);
+        }
         if (closeSidebar) {
           closeSidebar.addEventListener("click", closeSidebarMenu);
         }
@@ -767,6 +776,5 @@
         }
       }
     </script>
-    <script src="../../js/navigation.js"></script>
   </body>
 </html>

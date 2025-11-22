@@ -6,8 +6,14 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import os
 import json
 from sqlalchemy import func
+<<<<<<< HEAD
+from datetime import datetime
+import smtplib
+from email.message import EmailMessage
+=======
 from datetime import datetime, timedelta
 from decimal import Decimal
+>>>>>>> 1e533b4361dde9579df50821049cbdd042dcef04
 
 app = Flask(__name__)
 
@@ -73,6 +79,19 @@ class Booking(db.Model):
     details = db.Column(db.String(500))
     status = db.Column(db.String(50), default='pending')
     amount = db.Column(db.Float, default=0.0)
+    # Provider assignment fields
+    assigned_provider_id = db.Column(db.Integer, nullable=True)
+    provider_name = db.Column(db.String(120), nullable=True)
+    provider_email = db.Column(db.String(120), nullable=True)
+    provider_phone = db.Column(db.String(30), nullable=True)
+    priority_level = db.Column(db.String(20), nullable=True)
+    cleaning_type = db.Column(db.String(120), nullable=True)
+    estimated_price = db.Column(db.Float, nullable=True)
+    final_price = db.Column(db.Float, nullable=True)
+    commission_amount = db.Column(db.Float, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    completed_at = db.Column(db.DateTime, nullable=True)
 
     def to_dict(self):
         return {
@@ -84,7 +103,19 @@ class Booking(db.Model):
             'service': self.service,
             'details': self.details,
             'status': self.status,
-            'amount': self.amount
+            'amount': self.amount,
+            'assigned_provider_id': self.assigned_provider_id,
+            'provider_name': self.provider_name,
+            'provider_email': self.provider_email,
+            'provider_phone': self.provider_phone,
+            'priority_level': self.priority_level,
+            'cleaning_type': self.cleaning_type,
+            'estimated_price': self.estimated_price,
+            'final_price': self.final_price,
+            'commission_amount': self.commission_amount,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'completed_at': self.completed_at.isoformat() if self.completed_at else None
         }
 
 class Complaint(db.Model):
@@ -162,6 +193,43 @@ class ServiceProvider(db.Model):
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
 
+<<<<<<< HEAD
+
+def send_email(to_email: str, subject: str, body: str, reply_to: str = None) -> bool:
+    """Send a plain-text email using SMTP. Relies on environment variables:
+    EMAIL_HOST, EMAIL_PORT, EMAIL_USER, EMAIL_PASS, EMAIL_FROM
+    Returns True on success, False otherwise.
+    """
+    EMAIL_HOST = os.environ.get('EMAIL_HOST')
+    if not EMAIL_HOST:
+        # Email not configured
+        print('send_email: EMAIL_HOST not set; skipping email')
+        return False
+
+    EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 587))
+    EMAIL_USER = os.environ.get('EMAIL_USER')
+    EMAIL_PASS = os.environ.get('EMAIL_PASS')
+    EMAIL_FROM = os.environ.get('EMAIL_FROM', EMAIL_USER)
+
+    try:
+        msg = EmailMessage()
+        msg['Subject'] = subject
+        msg['From'] = EMAIL_FROM
+        msg['To'] = to_email
+        if reply_to:
+            msg['Reply-To'] = reply_to
+        msg.set_content(body)
+
+        with smtplib.SMTP(EMAIL_HOST, EMAIL_PORT) as smtp:
+            smtp.starttls()
+            if EMAIL_USER and EMAIL_PASS:
+                smtp.login(EMAIL_USER, EMAIL_PASS)
+            smtp.send_message(msg)
+        return True
+    except Exception as e:
+        print('send_email error:', e)
+        return False
+=======
 # New models for dynamic pricing system
 class ServicePricing(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -279,6 +347,7 @@ class ServiceRequest(db.Model):
             'confirmed_at': self.confirmed_at.isoformat() if self.confirmed_at else None,
             'completed_at': self.completed_at.isoformat() if self.completed_at else None
         }
+>>>>>>> 1e533b4361dde9579df50821049cbdd042dcef04
 
 @app.route('/api/health')
 def health_check():
@@ -340,6 +409,53 @@ def create_booking():
     )
     db.session.add(booking)
     db.session.commit()
+    # Try sending customer and admin notifications
+    try:
+        ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL')
+        EMAIL_FROM = os.environ.get('EMAIL_FROM')
+
+        # Customer email (if provided in request payload)
+        customer_email = data.get('email')
+        customer_name = data.get('name')
+
+        if customer_email:
+            cust_subject = 'Your service request has been received - HomeSwift'
+            cust_body = (
+                f"Hi {customer_name},\n\n"
+                "Thank you for booking with HomeSwift!\n\n"
+                "Your Request Details:\n"
+                f"- Service Type: {data.get('service')}\n"
+                f"- Date: {data.get('date')}\n"
+                f"- Location: {data.get('address')}\n"
+                "- Status: Pending Confirmation\n\n"
+                "We're finding the best provider for you and will confirm within 2 hours.\n\n"
+                f"Request ID: {booking.id}\n\n"
+                "Questions? Reply to this email.\n\n"
+                "- HomeSwift Team"
+            )
+            send_email(customer_email, cust_subject, cust_body, reply_to=EMAIL_FROM)
+
+        # Admin notification
+        if ADMIN_EMAIL:
+            admin_subject = f"NEW BOOKING: {data.get('service')} - {data.get('address')}"
+            admin_body = (
+                "New service request received!\n\n"
+                f"Customer: {data.get('name')}\n"
+                f"Phone: {data.get('phone')}\n"
+                f"Email: {data.get('email')}\n"
+                f"Service: {data.get('service')}\n"
+                f"Date: {data.get('date')}\n"
+                f"Time: {data.get('time')}\n"
+                f"Address: {data.get('address')}\n"
+                f"Description: {data.get('details')}\n"
+                f"Priority: {data.get('priority_level', 'normal')}\n\n"
+                f"Request ID: {booking.id}\n\n"
+                "ACTION REQUIRED: Assign a provider and confirm booking."
+            )
+            send_email(ADMIN_EMAIL, admin_subject, admin_body, reply_to=EMAIL_FROM)
+    except Exception as e:
+        print('Error sending booking emails:', e)
+
     return jsonify({'message': 'Booking created', 'booking': booking.to_dict()}), 201
 
 @app.route('/api/bookings', methods=['GET'])
@@ -534,6 +650,83 @@ def delete_provider(provider_id):
     db.session.commit()
     return jsonify({'message': 'Provider deleted'})
 
+<<<<<<< HEAD
+
+@app.route('/api/bookings/<int:booking_id>/assign', methods=['POST'])
+def assign_provider(booking_id):
+    """Assign a provider to a booking and notify provider + customer.
+    Body: { provider_id: int, priority_level?: str, estimated_price?: float }
+    """
+    booking = Booking.query.get_or_404(booking_id)
+    data = request.get_json()
+    provider_id = data.get('provider_id')
+    if not provider_id:
+        return jsonify({'error': 'provider_id required'}), 400
+    provider = ServiceProvider.query.get_or_404(provider_id)
+
+    booking.assigned_provider_id = provider.id
+    booking.provider_name = provider.name
+    booking.provider_email = provider.email
+    booking.provider_phone = provider.phone
+    booking.priority_level = data.get('priority_level')
+    booking.estimated_price = float(data.get('estimated_price')) if data.get('estimated_price') else None
+    booking.status = 'confirmed'
+    db.session.commit()
+
+    # Notify provider
+    try:
+        EMAIL_FROM = os.environ.get('EMAIL_FROM')
+        provider_subject = f"New Job Assignment - HomeSwift - {booking.date}"
+        provider_body = (
+            f"Hi {provider.name},\n\n"
+            "You have a new job assignment!\n\n"
+            "Job Details:\n"
+            f"- Service: {booking.service} - {booking.cleaning_type or ''}\n"
+            f"- Date: {booking.date}\n"
+            f"- Time: {booking.time}\n"
+            f"- Location: {booking.address}\n"
+            f"- Customer: {booking.name} - {getattr(booking, 'phone', '')}\n\n"
+            "Job Description:\n"
+            f"{booking.details}\n\n"
+            f"Priority: {booking.priority_level or 'normal'}\n\n"
+            "PLEASE CONFIRM:\n"
+            f"Reply to this email or call {EMAIL_FROM} to confirm you can take this job.\n\n"
+            f"Customer expects you at {booking.time} on {booking.date}.\n\n"
+            f"Job ID: {booking.id}"
+        )
+        send_email(provider.email, provider_subject, provider_body, reply_to=EMAIL_FROM)
+    except Exception as e:
+        print('Error sending provider email:', e)
+
+    # Notify customer (if email present)
+    try:
+        customer_email = request.get_json().get('customer_email') or None
+        if not customer_email:
+            # fallback to data payload field 'email' if present
+            customer_email = request.get_json().get('email') or None
+        if customer_email:
+            cust_subject = 'Your service is confirmed! - HomeSwift'
+            cust_body = (
+                f"Hi {booking.name},\n\n"
+                "Great news! Your service has been confirmed.\n\n"
+                "Booking Details:\n"
+                f"- Service: {booking.service}\n"
+                f"- Date: {booking.date}\n"
+                f"- Time: {booking.time}\n"
+                f"- Provider: {provider.name}\n"
+                f"- Provider Contact: {provider.phone}\n\n"
+                f"Your provider will arrive at the scheduled time.\n\n"
+                f"Estimated Price: R{booking.estimated_price or 'TBD'}\n\n"
+                "Need to reschedule? Reply to this email or call us.\n\n"
+                f"Request ID: {booking.id}\n\n"
+                "- HomeSwift Team"
+            )
+            send_email(customer_email, cust_subject, cust_body, reply_to=EMAIL_FROM)
+    except Exception as e:
+        print('Error sending customer confirmation email:', e)
+
+    return jsonify({'message': 'Provider assigned and notifications sent', 'booking': booking.to_dict()})
+=======
 # ========== DYNAMIC PRICING SYSTEM ENDPOINTS ==========
 
 # Email helper functions
@@ -1185,6 +1378,7 @@ def seed_pricing():
     
     db.session.commit()
     return jsonify({'message': f'Seeded {count} pricing records'})
+>>>>>>> 1e533b4361dde9579df50821049cbdd042dcef04
 
 if __name__ == '__main__':
     import sys

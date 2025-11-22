@@ -1,13 +1,15 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useMutation } from '@tanstack/react-query'
 import { authApi } from '@/lib/api'
 import Link from 'next/link'
+import { Logo } from '@/components/Logo'
 
 export default function LoginPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -15,12 +17,32 @@ export default function LoginPage() {
   const loginMutation = useMutation({
     mutationFn: authApi.login,
     onSuccess: (data) => {
+      console.log('Login success, user data:', data.user)
       // Store user data
       localStorage.setItem('user', JSON.stringify(data.user))
-      // Redirect to admin or home
-      router.push('/admin')
+      
+      // Trigger storage event to update navigation
+      window.dispatchEvent(new Event('storage'))
+      
+      // Check if user is admin
+      const isAdminUser = data.user?.role === 'admin'
+      console.log('Is admin?', isAdminUser, 'Role:', data.user?.role)
+      const redirectTo = searchParams.get('redirect')
+      
+      // Redirect based on role or redirect parameter
+      if (redirectTo && isAdminUser) {
+        console.log('Redirecting to:', redirectTo)
+        router.push(redirectTo)
+      } else if (isAdminUser) {
+        console.log('Redirecting to admin dashboard')
+        router.push('/admin')
+      } else {
+        console.log('Redirecting to home page')
+        router.push('/')
+      }
     },
     onError: (error: any) => {
+      console.error('Login error:', error)
       setError(error.response?.data?.error || 'Login failed')
     },
   })
@@ -32,15 +54,13 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-600 via-blue-700 to-cyan-600 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-white flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="bg-white rounded-3xl shadow-2xl p-8">
           {/* Logo/Header */}
           <div className="text-center mb-8">
-            <div className="inline-block mb-4">
-              <div className="w-20 h-20 bg-gradient-to-br from-blue-600 to-cyan-600 rounded-2xl flex items-center justify-center text-4xl shadow-lg">
-                🏠
-              </div>
+            <div className="flex justify-center mb-4">
+              <Logo size="lg" />
             </div>
             <h1 className="text-4xl font-extrabold text-gray-900 mb-2">Welcome Back</h1>
             <p className="text-gray-600">Sign in to your HomeSwift account</p>
@@ -83,7 +103,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loginMutation.isPending}
-              className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 text-white py-4 rounded-xl font-bold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all disabled:opacity-50 disabled:transform-none"
+              className="w-full bg-[#1A531A] text-white py-4 rounded-xl font-bold text-lg shadow-xl hover:bg-[#1A531A]/90 hover:shadow-2xl transform hover:scale-105 transition-all disabled:opacity-50 disabled:transform-none"
             >
               {loginMutation.isPending ? (
                 <span className="flex items-center justify-center gap-2">

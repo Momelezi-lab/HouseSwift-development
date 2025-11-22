@@ -28,13 +28,14 @@ export async function POST(request: NextRequest) {
     // Hash password
     const passwordHash = await bcrypt.hash(password, 10)
 
-    // Create user
+    // Create user with default role "customer"
     const user = await prisma.user.create({
       data: {
         name,
         email,
         passwordHash,
         phone,
+        role: 'customer', // Default role for new users
         registered: new Date().toISOString().split('T')[0],
       },
     })

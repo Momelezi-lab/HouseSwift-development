@@ -29,8 +29,8 @@ export default function ContactPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50">
-      <header className="bg-gradient-to-r from-blue-600 via-blue-700 to-cyan-600 text-white py-12 px-4 shadow-2xl">
+    <div className="min-h-screen bg-white">
+      <header className="bg-[#1A531A] text-white py-12 px-4 shadow-2xl">
         <div className="max-w-4xl mx-auto">
           <Link
             href="/"
@@ -39,7 +39,7 @@ export default function ContactPage() {
             ← Back to Home
           </Link>
           <h1 className="text-4xl md:text-5xl font-extrabold mb-2">Get in Touch</h1>
-          <p className="text-xl text-blue-100">We'd love to hear from you</p>
+          <p className="text-xl text-white/90">We'd love to hear from you</p>
         </div>
       </header>
 
@@ -51,7 +51,7 @@ export default function ContactPage() {
               <h2 className="text-2xl font-bold text-gray-900 mb-4">Contact Information</h2>
               <div className="space-y-4">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-cyan-600 rounded-xl flex items-center justify-center text-2xl">
+                  <div className="w-12 h-12 bg-[#1A531A] rounded-xl flex items-center justify-center text-2xl text-white">
                     📧
                   </div>
                   <div>
@@ -60,7 +60,7 @@ export default function ContactPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-gradient-to-br from-green-600 to-emerald-600 rounded-xl flex items-center justify-center text-2xl">
+                  <div className="w-12 h-12 bg-[#90B890] rounded-xl flex items-center justify-center text-2xl text-white">
                     📞
                   </div>
                   <div>
@@ -69,7 +69,7 @@ export default function ContactPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-pink-600 rounded-xl flex items-center justify-center text-2xl">
+                  <div className="w-12 h-12 bg-[#1A531A] rounded-xl flex items-center justify-center text-2xl text-white">
                     🕒
                   </div>
                   <div>
@@ -93,7 +93,7 @@ export default function ContactPage() {
                 <p className="text-gray-600 mb-4">We'll get back to you soon.</p>
                 <button
                   onClick={() => setSubmitted(false)}
-                  className="text-blue-600 hover:text-blue-800 font-semibold"
+                  className="text-[#1A531A] hover:text-[#1A531A]/80 font-semibold"
                 >
                   Send Another Message
                 </button>
@@ -108,7 +108,7 @@ export default function ContactPage() {
                     value={formData.name}
                     onChange={handleChange}
                     required
-                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#1A531A] focus:border-[#1A531A] transition-all"
                   />
                 </div>
                 <div>
@@ -119,7 +119,7 @@ export default function ContactPage() {
                     value={formData.email}
                     onChange={handleChange}
                     required
-                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#1A531A] focus:border-[#1A531A] transition-all"
                   />
                 </div>
                 <div>
@@ -130,7 +130,7 @@ export default function ContactPage() {
                     value={formData.subject}
                     onChange={handleChange}
                     required
-                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#1A531A] focus:border-[#1A531A] transition-all"
                   />
                 </div>
                 <div>
@@ -147,7 +147,7 @@ export default function ContactPage() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 text-white py-4 rounded-xl font-bold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all disabled:opacity-50 disabled:transform-none"
+                  className="w-full bg-[#1A531A] text-white py-4 rounded-xl font-bold text-lg shadow-xl hover:bg-[#1A531A]/90 hover:shadow-2xl transform hover:scale-105 transition-all disabled:opacity-50 disabled:transform-none"
                 >
                   {isSubmitting ? 'Sending...' : 'Send Message'}
                 </button>

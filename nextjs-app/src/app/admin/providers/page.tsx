@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { providerApi } from '@/lib/api'
 import Link from 'next/link'
@@ -8,6 +8,19 @@ import Link from 'next/link'
 export default function ProvidersPage() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [editingProvider, setEditingProvider] = useState<any>(null)
+  
+  // Debug logging
+  useEffect(() => {
+    console.log('ProvidersPage mounted/updated - isAddModalOpen:', isAddModalOpen, 'editingProvider:', editingProvider)
+  }, [isAddModalOpen, editingProvider])
+  
+  // Test button handler
+  const handleAddClick = () => {
+    console.log('=== handleAddClick called ===')
+    console.log('Before: isAddModalOpen =', isAddModalOpen)
+    setIsAddModalOpen(true)
+    console.log('After: setIsAddModalOpen(true) called')
+  }
 
   const { data: providers, isLoading, refetch } = useQuery({
     queryKey: ['providers'],
@@ -23,19 +36,19 @@ export default function ProvidersPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1A531A]"></div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 p-8">
+    <div className="min-h-screen bg-white p-8">
       <div className="max-w-7xl mx-auto">
         <div className="mb-6">
           <Link
             href="/admin"
-            className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 font-semibold mb-4"
+            className="inline-flex items-center gap-2 text-[#1A531A] hover:text-[#1A531A]/80 font-semibold mb-4"
           >
             ← Back to Admin Dashboard
           </Link>
@@ -45,8 +58,10 @@ export default function ProvidersPage() {
               <p className="text-gray-600">Manage your service providers</p>
             </div>
             <button
-              onClick={() => setIsAddModalOpen(true)}
-              className="px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl font-bold hover:shadow-lg transform hover:scale-105 transition-all"
+              type="button"
+              onClick={handleAddClick}
+              style={{ zIndex: 1000, position: 'relative', pointerEvents: 'auto' }}
+              className="px-6 py-3 bg-[#1A531A] text-white rounded-xl font-bold hover:bg-[#1A531A]/90 hover:shadow-lg transform hover:scale-105 transition-all cursor-pointer"
             >
               + Add Provider
             </button>
@@ -73,7 +88,7 @@ export default function ProvidersPage() {
             <p className="text-gray-600 mb-4">No providers found</p>
             <button
               onClick={() => setIsAddModalOpen(true)}
-              className="px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl font-bold"
+              className="px-6 py-3 bg-[#1A531A] text-white rounded-xl font-bold hover:bg-[#1A531A]/90"
             >
               Add Your First Provider
             </button>
@@ -82,17 +97,19 @@ export default function ProvidersPage() {
 
         {(isAddModalOpen || editingProvider) && (
           <ProviderModal
-            provider={editingProvider}
-            onClose={() => {
-              setIsAddModalOpen(false)
-              setEditingProvider(null)
-            }}
-            onSuccess={() => {
-              setIsAddModalOpen(false)
-              setEditingProvider(null)
-              refetch()
-            }}
-          />
+              provider={editingProvider}
+              onClose={() => {
+                console.log('Modal onClose called')
+                setIsAddModalOpen(false)
+                setEditingProvider(null)
+              }}
+              onSuccess={() => {
+                console.log('Modal onSuccess called')
+                setIsAddModalOpen(false)
+                setEditingProvider(null)
+                refetch()
+              }}
+            />
         )}
       </div>
     </div>
@@ -111,7 +128,7 @@ function ProviderCard({
   return (
     <div className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100 hover:shadow-2xl transform hover:scale-105 transition-all">
       <div className="flex items-center gap-4 mb-4">
-        <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-full flex items-center justify-center text-2xl text-white font-bold">
+        <div className="w-16 h-16 bg-[#1A531A] rounded-full flex items-center justify-center text-2xl text-white font-bold">
           {provider.name.charAt(0)}
         </div>
         <div>
@@ -142,7 +159,7 @@ function ProviderCard({
       <div className="flex gap-2">
         <button
           onClick={onEdit}
-          className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold transition-colors"
+          className="flex-1 px-4 py-2 bg-[#1A531A] text-white rounded-lg hover:bg-[#1A531A]/90 font-semibold transition-colors"
         >
           Edit
         </button>
@@ -176,35 +193,92 @@ function ProviderModal({
     hourlyRate: provider?.hourlyRate || 0,
     rating: provider?.rating || 0,
   })
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
 
   const createMutation = useMutation({
-    mutationFn: (data: any) => providerApi.create(data),
-    onSuccess,
+    mutationFn: (data: any) => {
+      console.log('Calling providerApi.create with:', data)
+      return providerApi.create(data)
+    },
+    onSuccess: (response) => {
+      setError('')
+      setSuccess('Provider created successfully!')
+      console.log('Provider created successfully:', response)
+      // Reset form
+      setFormData({
+        name: '',
+        serviceType: '',
+        phone: '',
+        email: '',
+        address: '',
+        experienceYears: 0,
+        hourlyRate: 0,
+        rating: 0,
+      })
+      // Close modal after a short delay to show success message
+      setTimeout(() => {
+        onSuccess()
+      }, 1000)
+    },
+    onError: (error: any) => {
+      console.error('Create provider error - full error:', error)
+      console.error('Error response:', error.response)
+      console.error('Error data:', error.response?.data)
+      console.error('Error message:', error.message)
+      const errorMessage = error.response?.data?.error || error.response?.data?.details || error.message || 'Failed to create provider'
+      setError(errorMessage)
+      setSuccess('')
+    },
   })
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: any }) =>
       providerApi.update(id, data),
-    onSuccess,
+    onSuccess: (response) => {
+      setError('')
+      console.log('Provider updated successfully:', response)
+      onSuccess()
+    },
+    onError: (error: any) => {
+      const errorMessage = error.response?.data?.error || error.message || 'Failed to update provider'
+      setError(errorMessage)
+      console.error('Update provider error:', error)
+    },
   })
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    setError('')
+    setSuccess('')
+    
+    // Validate required fields
+    if (!formData.name || !formData.serviceType || !formData.phone || !formData.email) {
+      setError('Please fill in all required fields')
+      return
+    }
+    
+    const submitData = {
+      ...formData,
+      registered: new Date().toISOString().split('T')[0],
+      status: 'active',
+    }
+    
+    console.log('Submitting provider data:', submitData)
+    
     if (provider) {
+      console.log('Updating provider:', provider.id)
       updateMutation.mutate({ id: provider.id, data: formData })
     } else {
-      createMutation.mutate({
-        ...formData,
-        registered: new Date().toISOString().split('T')[0],
-        status: 'active',
-      })
+      console.log('Creating new provider')
+      createMutation.mutate(submitData)
     }
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4" style={{ zIndex: 9999, position: 'fixed' }}>
       <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-auto">
-        <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-cyan-600 text-white p-6 flex items-center justify-between">
+        <div className="sticky top-0 bg-[#1A531A] text-white p-6 flex items-center justify-between">
           <h2 className="text-2xl font-bold">
             {provider ? 'Edit Provider' : 'Add New Provider'}
           </h2>
@@ -216,6 +290,16 @@ function ProviderModal({
           </button>
         </div>
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {error && (
+            <div className="bg-red-50 border-2 border-red-200 text-red-800 px-4 py-3 rounded-xl">
+              <strong>Error:</strong> {error}
+            </div>
+          )}
+          {success && (
+            <div className="bg-green-50 border-2 border-green-200 text-green-800 px-4 py-3 rounded-xl">
+              {success}
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">Name *</label>
@@ -224,7 +308,7 @@ function ProviderModal({
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 required
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#1A531A] focus:border-[#1A531A]"
               />
             </div>
             <div>
@@ -234,7 +318,7 @@ function ProviderModal({
                 value={formData.serviceType}
                 onChange={(e) => setFormData({ ...formData, serviceType: e.target.value })}
                 required
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#1A531A] focus:border-[#1A531A]"
               />
             </div>
           </div>
@@ -246,7 +330,7 @@ function ProviderModal({
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 required
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#1A531A] focus:border-[#1A531A]"
               />
             </div>
             <div>
@@ -256,7 +340,7 @@ function ProviderModal({
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 required
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#1A531A] focus:border-[#1A531A]"
               />
             </div>
           </div>
@@ -266,7 +350,7 @@ function ProviderModal({
               type="text"
               value={formData.address}
               onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-              className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#1A531A] focus:border-[#1A531A]"
             />
           </div>
           <div className="grid grid-cols-3 gap-4">
@@ -278,7 +362,7 @@ function ProviderModal({
                 onChange={(e) =>
                   setFormData({ ...formData, experienceYears: parseInt(e.target.value) || 0 })
                 }
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#1A531A] focus:border-[#1A531A]"
               />
             </div>
             <div>
@@ -290,7 +374,7 @@ function ProviderModal({
                 onChange={(e) =>
                   setFormData({ ...formData, hourlyRate: parseFloat(e.target.value) || 0 })
                 }
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#1A531A] focus:border-[#1A531A]"
               />
             </div>
             <div>
@@ -304,7 +388,7 @@ function ProviderModal({
                 onChange={(e) =>
                   setFormData({ ...formData, rating: parseFloat(e.target.value) || 0 })
                 }
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#1A531A] focus:border-[#1A531A]"
               />
             </div>
           </div>
@@ -312,7 +396,7 @@ function ProviderModal({
             <button
               type="submit"
               disabled={createMutation.isPending || updateMutation.isPending}
-              className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl font-bold hover:shadow-lg transform hover:scale-105 transition-all disabled:opacity-50"
+              className="flex-1 px-6 py-3 bg-[#1A531A] text-white rounded-xl font-bold hover:bg-[#1A531A]/90 hover:shadow-lg transform hover:scale-105 transition-all disabled:opacity-50"
             >
               {createMutation.isPending || updateMutation.isPending
                 ? 'Saving...'

@@ -34,8 +34,8 @@ export default function FAQPage() {
   const [openIndex, setOpenIndex] = useState<number | null>(0)
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50">
-      <header className="bg-gradient-to-r from-blue-600 via-blue-700 to-cyan-600 text-white py-12 px-4 shadow-2xl">
+    <div className="min-h-screen bg-white">
+      <header className="bg-[#1A531A] text-white py-12 px-4 shadow-2xl">
         <div className="max-w-4xl mx-auto">
           <Link
             href="/"
@@ -44,7 +44,7 @@ export default function FAQPage() {
             ← Back to Home
           </Link>
           <h1 className="text-4xl md:text-5xl font-extrabold mb-2">Frequently Asked Questions</h1>
-          <p className="text-xl text-blue-100">Find answers to common questions</p>
+          <p className="text-xl text-white/90">Find answers to common questions</p>
         </div>
       </header>
 
@@ -57,10 +57,10 @@ export default function FAQPage() {
             >
               <button
                 onClick={() => setOpenIndex(openIndex === index ? null : index)}
-                className="w-full px-6 py-5 flex items-center justify-between text-left hover:bg-blue-50 transition-colors"
+                className="w-full px-6 py-5 flex items-center justify-between text-left hover:bg-[#90B890]/10 transition-colors"
               >
                 <h3 className="text-lg font-bold text-gray-900 pr-4">{faq.question}</h3>
-                <span className="text-2xl text-blue-600 font-bold flex-shrink-0">
+                <span className="text-2xl text-[#1A531A] font-bold flex-shrink-0">
                   {openIndex === index ? '−' : '+'}
                 </span>
               </button>
