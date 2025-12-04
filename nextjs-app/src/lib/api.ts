@@ -1,6 +1,8 @@
 import axios from 'axios'
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
+// Use relative URLs for API calls (Next.js API routes are on the same server)
+// Only use absolute URL if explicitly set in environment
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || ''
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
@@ -64,7 +66,16 @@ export const providerApi = {
 }
 
 export const authApi = {
-  signup: async (data: { name: string; email: string; password: string; phone?: string }) => {
+  signup: async (data: { 
+    name: string
+    email: string
+    password: string
+    phone?: string
+    userType?: 'customer' | 'provider'
+    serviceType?: string
+    address?: string
+    experienceYears?: string
+  }) => {
     const response = await api.post('/api/auth/signup', data)
     return response.data
   },

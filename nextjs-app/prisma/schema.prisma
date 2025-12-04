@@ -8,7 +8,7 @@ generator client {
 // Seed configuration
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -18,7 +18,7 @@ model User {
   email       String   @unique
   passwordHash String  @map("password_hash")
   phone       String?
-  role        String   @default("customer") // "customer" or "admin"
+  role        String   @default("customer") // "customer", "admin", or "provider"
   registered  String
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
@@ -140,6 +140,7 @@ model ServiceRequest {
   providerPhone          String?   @map("provider_phone")
   providerEmail          String?   @map("provider_email")
   paymentMethod          String?   @map("payment_method")
+  proofOfPaymentUrl     String?   @map("proof_of_payment_url")
   customerPaymentReceived Boolean  @default(false) @map("customer_payment_received")
   providerPaymentMade    Boolean  @default(false) @map("provider_payment_made")
   commissionCollected     Boolean  @default(false) @map("commission_collected")

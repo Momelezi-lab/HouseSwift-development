@@ -24,9 +24,11 @@ export default function LoginPage() {
       // Trigger storage event to update navigation
       window.dispatchEvent(new Event('storage'))
       
-      // Check if user is admin
-      const isAdminUser = data.user?.role === 'admin'
-      console.log('Is admin?', isAdminUser, 'Role:', data.user?.role)
+      // Check user role
+      const userRole = data.user?.role
+      const isAdminUser = userRole === 'admin'
+      const isProvider = userRole === 'provider'
+      console.log('User role:', userRole)
       const redirectTo = searchParams.get('redirect')
       
       // Redirect based on role or redirect parameter
@@ -36,6 +38,9 @@ export default function LoginPage() {
       } else if (isAdminUser) {
         console.log('Redirecting to admin dashboard')
         router.push('/admin')
+      } else if (isProvider) {
+        console.log('Redirecting to provider dashboard')
+        router.push('/provider-dashboard')
       } else {
         console.log('Redirecting to home page')
         router.push('/')

@@ -49,6 +49,7 @@ export async function PATCH(
       'providerPhone',
       'providerEmail',
       'paymentMethod',
+      'proofOfPaymentUrl',
       'customerPaymentReceived',
       'providerPaymentMade',
       'commissionCollected',
