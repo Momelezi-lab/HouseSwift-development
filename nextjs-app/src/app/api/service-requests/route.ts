@@ -156,9 +156,9 @@ export async function POST(request: NextRequest) {
         preferredTime: preferredTime,
         additionalNotes: data.additional_notes,
         selectedItems: JSON.stringify(selectedItemsArray),
-        totalCustomerPaid: totalCustomerPaid,
-        totalProviderPayout: totalProviderPayout,
-        totalCommissionEarned: totalCommissionEarned,
+        totalCustomerPaid: parseFloat(totalCustomerPaid.toString()),
+        totalProviderPayout: parseFloat(totalProviderPayout.toString()),
+        totalCommissionEarned: parseFloat(totalCommissionEarned.toString()),
         status: 'pending',
       },
     })

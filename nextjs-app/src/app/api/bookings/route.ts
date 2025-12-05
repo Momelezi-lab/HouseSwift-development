@@ -1,24 +1,24 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
 
 export async function GET() {
   try {
     const bookings = await prisma.booking.findMany({
-      orderBy: { createdAt: 'desc' },
-    })
-    return NextResponse.json(bookings)
+      orderBy: { createdAt: "desc" },
+    });
+    return NextResponse.json(bookings);
   } catch (error: any) {
-    console.error('Get bookings error:', error)
+    console.error("Get bookings error:", error);
     return NextResponse.json(
-      { error: 'Failed to fetch bookings' },
+      { error: "Failed to fetch bookings" },
       { status: 500 }
-    )
+    );
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const data = await request.json()
+    const data = await request.json();
 
     // Check for duplicates
     const existing = await prisma.booking.findFirst({
@@ -28,13 +28,13 @@ export async function POST(request: NextRequest) {
         time: data.time,
         service: data.service,
       },
-    })
+    });
 
     if (existing) {
       return NextResponse.json(
-        { error: 'Duplicate booking detected' },
+        { error: "Duplicate booking detected" },
         { status: 409 }
-      )
+      );
     }
 
     const booking = await prisma.booking.create({
@@ -45,24 +45,23 @@ export async function POST(request: NextRequest) {
         time: data.time,
         service: data.service,
         details: data.details,
-        status: data.status || 'pending',
+        status: data.status || "pending",
         amount: data.amount || 0,
       },
-    })
+    });
 
     return NextResponse.json(
       {
-        message: 'Booking created',
+        message: "Booking created",
         booking,
       },
       { status: 201 }
-    )
+    );
   } catch (error: any) {
-    console.error('Create booking error:', error)
+    console.error("Create booking error:", error);
     return NextResponse.json(
-      { error: 'Failed to create booking' },
+      { error: "Failed to create booking" },
       { status: 500 }
-    )
+    );
   }
 }
-
