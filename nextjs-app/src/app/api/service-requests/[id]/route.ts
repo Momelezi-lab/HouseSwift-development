@@ -83,12 +83,18 @@ export async function PATCH(
     if (data.status === 'confirmed' && !updateData.confirmedAt) {
       updateData.confirmedAt = new Date()
       // Send provider assignment emails
-      const request = await prisma.serviceRequest.findUnique({
+      const serviceRequest = await prisma.serviceRequest.findUnique({
         where: { requestId: id },
       })
+      if (!serviceRequest) {
+        return NextResponse.json(
+          { error: 'Service request not found' },
+          { status: 404 }
+        )
+      }
       const providerId = data.assignedProviderId !== undefined && data.assignedProviderId !== null && data.assignedProviderId !== ''
         ? parseInt(data.assignedProviderId.toString()) 
-        : request?.assignedProviderId
+        : serviceRequest?.assignedProviderId
       if (providerId) {
         const provider = await prisma.serviceProvider.findUnique({
           where: { id: providerId },
@@ -98,10 +104,10 @@ export async function PATCH(
           const providerEmail = templates.providerAssignment({
             providerName: provider.name,
             requestId: id,
-            customerName: request.customerName,
-            customerAddress: request.customerAddress,
-            preferredDate: request.preferredDate.toISOString().split('T')[0],
-            preferredTime: request.preferredTime,
+            customerName: serviceRequest.customerName,
+            customerAddress: serviceRequest.customerAddress,
+            preferredDate: serviceRequest.preferredDate.toISOString().split('T')[0],
+            preferredTime: serviceRequest.preferredTime,
           })
           await sendEmail({
             to: provider.email,
@@ -110,14 +116,14 @@ export async function PATCH(
           })
 
           const customerEmail = templates.customerProviderDetails({
-            customerName: request.customerName,
+            customerName: serviceRequest.customerName,
             providerName: provider.name,
             providerPhone: provider.phone,
             providerEmail: provider.email,
             requestId: id,
           })
           await sendEmail({
-            to: request.customerEmail,
+            to: serviceRequest.customerEmail,
             subject: customerEmail.subject,
             html: customerEmail.html,
           })
