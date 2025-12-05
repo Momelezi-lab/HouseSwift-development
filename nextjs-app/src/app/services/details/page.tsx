@@ -1,7 +1,8 @@
 'use client'
 
+import { Suspense } from 'react'
 import Link from 'next/link'
-import { useSearchParams, Suspense } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 
 const serviceDetails: Record<string, {
   title: string
