@@ -1,69 +1,69 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
-import { sendEmail, generateEmailTemplates } from '@/lib/email'
-import { Decimal } from '@prisma/client/runtime/library'
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { sendEmail, generateEmailTemplates } from "@/lib/email";
+import { Decimal } from "@prisma/client/runtime/library";
 
-const CALLOUT_FEE = 100.00 // R100 callout fee
+const CALLOUT_FEE = 100.0; // R100 callout fee
 
 export async function POST(request: NextRequest) {
   try {
-    const data = await request.json()
+    const data = await request.json();
 
     // Validate required fields
     const requiredFields = [
-      'customer_name',
-      'customer_email',
-      'customer_phone',
-      'customer_address',
-      'preferred_date',
-      'preferred_time',
-      'items',
-    ]
+      "customer_name",
+      "customer_email",
+      "customer_phone",
+      "customer_address",
+      "preferred_date",
+      "preferred_time",
+      "items",
+    ];
     for (const field of requiredFields) {
       if (!data[field]) {
         return NextResponse.json(
           { error: `Missing required field: ${field}` },
           { status: 400 }
-        )
+        );
       }
     }
 
     // Validate phone (10 digits for South Africa)
     const phone = data.customer_phone
-      .replace(/\s+/g, '')
-      .replace(/-/g, '')
-      .replace('+27', '0')
+      .replace(/\s+/g, "")
+      .replace(/-/g, "")
+      .replace("+27", "0");
     if (phone.length !== 10 || !/^\d+$/.test(phone)) {
       return NextResponse.json(
-        { error: 'Phone number must be exactly 10 digits' },
+        { error: "Phone number must be exactly 10 digits" },
         { status: 400 }
-      )
+      );
     }
 
     // Validate date (cannot be in the past)
-    const preferredDate = new Date(data.preferred_date)
+    const preferredDate = new Date(data.preferred_date);
     if (preferredDate < new Date(new Date().setHours(0, 0, 0, 0))) {
       return NextResponse.json(
-        { error: 'Preferred date cannot be in the past' },
+        { error: "Preferred date cannot be in the past" },
         { status: 400 }
-      )
+      );
     }
 
     // Calculate totals
-    let totalCustomerPaid = new Decimal(0)
-    let totalProviderPayout = new Decimal(0)
-    let totalCommissionEarned = new Decimal(0)
-    const selectedItemsArray: any[] = []
+    let totalCustomerPaid = new Decimal(0);
+    let totalProviderPayout = new Decimal(0);
+    let totalCommissionEarned = new Decimal(0);
+    const selectedItemsArray: any[] = [];
 
     // Process each item
     for (const itemInput of data.items) {
-      const { category, type, quantity, is_white } = itemInput
+      const { category, type, quantity, is_white } = itemInput;
 
       if (quantity < 1 || quantity > 10) {
         return NextResponse.json(
-          { error: 'Quantity must be between 1 and 10' },
+          { error: "Quantity must be between 1 and 10" },
           { status: 400 }
-        )
+        );
       }
 
       // Get pricing from database
@@ -72,35 +72,37 @@ export async function POST(request: NextRequest) {
           serviceCategory: category,
           serviceType: type,
         },
-      })
+      });
 
       if (!pricing) {
         return NextResponse.json(
           { error: `Pricing not found for ${category} - ${type}` },
           { status: 404 }
-        )
+        );
       }
 
       // Calculate prices
-      let customerLinePrice = new Decimal(pricing.customerDisplayPrice.toString())
-      let providerLinePrice = new Decimal(pricing.providerBasePrice.toString())
+      let customerLinePrice = new Decimal(
+        pricing.customerDisplayPrice.toString()
+      );
+      let providerLinePrice = new Decimal(pricing.providerBasePrice.toString());
 
       if (is_white && pricing.isWhiteApplicable) {
         customerLinePrice = customerLinePrice.add(
           new Decimal(pricing.colorSurchargeCustomer.toString())
-        )
+        );
         providerLinePrice = providerLinePrice.add(
           new Decimal(pricing.colorSurchargeProvider.toString())
-        )
+        );
       }
 
-      const itemPriceCustomer = customerLinePrice.mul(quantity)
-      const itemPriceProvider = providerLinePrice.mul(quantity)
-      const itemCommission = itemPriceCustomer.sub(itemPriceProvider)
+      const itemPriceCustomer = customerLinePrice.mul(quantity);
+      const itemPriceProvider = providerLinePrice.mul(quantity);
+      const itemCommission = itemPriceCustomer.sub(itemPriceProvider);
 
-      totalCustomerPaid = totalCustomerPaid.add(itemPriceCustomer)
-      totalProviderPayout = totalProviderPayout.add(itemPriceProvider)
-      totalCommissionEarned = totalCommissionEarned.add(itemCommission)
+      totalCustomerPaid = totalCustomerPaid.add(itemPriceCustomer);
+      totalProviderPayout = totalProviderPayout.add(itemPriceProvider);
+      totalCommissionEarned = totalCommissionEarned.add(itemCommission);
 
       selectedItemsArray.push({
         category: pricing.serviceCategory,
@@ -110,17 +112,17 @@ export async function POST(request: NextRequest) {
         customer_price: parseFloat(itemPriceCustomer.toString()),
         provider_price: parseFloat(itemPriceProvider.toString()),
         commission: parseFloat(itemCommission.toString()),
-      })
+      });
     }
 
     // Add callout fee
-    totalCustomerPaid = totalCustomerPaid.add(CALLOUT_FEE)
-    totalCommissionEarned = totalCommissionEarned.add(CALLOUT_FEE)
+    totalCustomerPaid = totalCustomerPaid.add(CALLOUT_FEE);
+    totalCommissionEarned = totalCommissionEarned.add(CALLOUT_FEE);
 
     // Create or find customer
     let customer = await prisma.customer.findFirst({
       where: { customerEmail: data.customer_email },
-    })
+    });
 
     if (!customer) {
       customer = await prisma.customer.create({
@@ -129,17 +131,17 @@ export async function POST(request: NextRequest) {
           customerEmail: data.customer_email,
           customerPhone: phone,
         },
-      })
+      });
     } else {
       await prisma.customer.update({
         where: { customerId: customer.customerId },
         data: { totalBookings: { increment: 1 } },
-      })
+      });
     }
 
     // Parse time
-    const [hours, minutes] = data.preferred_time.split(':')
-    const preferredTime = `${hours}:${minutes}:00`
+    const [hours, minutes] = data.preferred_time.split(":");
+    const preferredTime = `${hours}:${minutes}:00`;
 
     // Create service request
     const serviceRequest = await prisma.serviceRequest.create({
@@ -159,124 +161,150 @@ export async function POST(request: NextRequest) {
         totalCustomerPaid: parseFloat(totalCustomerPaid.toString()),
         totalProviderPayout: parseFloat(totalProviderPayout.toString()),
         totalCommissionEarned: parseFloat(totalCommissionEarned.toString()),
-        status: 'pending',
+        status: "pending",
       },
-    })
+    });
 
     // Send emails
-    const templates = generateEmailTemplates()
+    const templates = generateEmailTemplates();
     const customerEmail = templates.customerConfirmation({
       customerName: data.customer_name,
       requestId: serviceRequest.requestId,
       totalAmount: parseFloat(totalCustomerPaid.toString()),
       preferredDate: data.preferred_date,
       preferredTime: data.preferred_time,
-    })
+    });
     await sendEmail({
       to: data.customer_email,
       subject: customerEmail.subject,
       html: customerEmail.html,
-    })
+    });
 
     const adminEmail = templates.adminAlert({
       requestId: serviceRequest.requestId,
       customerName: data.customer_name,
       totalAmount: parseFloat(totalCustomerPaid.toString()),
-    })
+    });
     await sendEmail({
-      to: process.env.ADMIN_EMAIL || 'admin@homeswift.com',
+      to: process.env.ADMIN_EMAIL || "admin@homeswift.com",
       subject: adminEmail.subject,
       html: adminEmail.html,
-    })
+    });
 
     return NextResponse.json(
       {
-        message: 'Service request created successfully',
+        message: "Service request created successfully",
         request_id: serviceRequest.requestId,
         total_customer_paid: parseFloat(totalCustomerPaid.toString()),
       },
       { status: 201 }
-    )
+    );
   } catch (error: any) {
-    console.error('Service request creation error:', error)
+    console.error("Service request creation error:", error);
     return NextResponse.json(
-      { error: error.message || 'Failed to create service request' },
+      { error: error.message || "Failed to create service request" },
       { status: 500 }
-    )
+    );
   }
 }
 
 export async function GET(request: NextRequest) {
   try {
-    const searchParams = request.nextUrl.searchParams
-    const status = searchParams.get('status')
-    const category = searchParams.get('category')
-    const search = searchParams.get('search')
-    const customerEmail = searchParams.get('customerEmail')?.trim()
+    const searchParams = request.nextUrl.searchParams;
+    const status = searchParams.get("status");
+    const category = searchParams.get("category");
+    const search = searchParams.get("search");
+    const customerEmail = searchParams.get("customerEmail")?.trim();
 
-    console.log('GET /api/service-requests - customerEmail param:', customerEmail)
+    console.log(
+      "GET /api/service-requests - customerEmail param:",
+      customerEmail
+    );
 
-    const where: any = {}
-    if (status) where.status = status
+    const where: any = {};
+    if (status) where.status = status;
     if (category) {
-      where.selectedItems = { contains: category }
+      where.selectedItems = { contains: category };
     }
     if (search) {
       where.OR = [
         { customerName: { contains: search } },
         { requestId: parseInt(search) || 0 },
-      ]
+      ];
     }
 
     // Store email filter for post-processing (SQLite doesn't support case-insensitive mode)
-    const emailFilter = customerEmail?.toLowerCase()
+    const emailFilter = customerEmail?.toLowerCase();
 
-    console.log('GET /api/service-requests - emailFilter:', emailFilter)
-    console.log('GET /api/service-requests - where clause:', JSON.stringify(where))
+    console.log("GET /api/service-requests - emailFilter:", emailFilter);
+    console.log(
+      "GET /api/service-requests - where clause:",
+      JSON.stringify(where)
+    );
 
     let requests = await prisma.serviceRequest.findMany({
       where,
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
       include: {
         customer: true,
         provider: true,
       },
-    })
+    });
 
-    console.log('GET /api/service-requests - Total requests found:', requests.length)
-    const allRequestEmails = requests.map(r => r.customerEmail)
+    console.log(
+      "GET /api/service-requests - Total requests found:",
+      requests.length
+    );
+    const allRequestEmails = requests.map((r) => r.customerEmail);
     if (requests.length > 0) {
-      console.log('GET /api/service-requests - Sample request emails:', 
-        allRequestEmails.slice(0, 3))
+      console.log(
+        "GET /api/service-requests - Sample request emails:",
+        allRequestEmails.slice(0, 3)
+      );
     }
 
     // Case-insensitive email filtering for SQLite
     if (emailFilter) {
-      const beforeCount = requests.length
+      const beforeCount = requests.length;
       requests = requests.filter((req) => {
-        const reqEmail = req.customerEmail?.trim().toLowerCase()
-        const matches = reqEmail === emailFilter
+        const reqEmail = req.customerEmail?.trim().toLowerCase();
+        const matches = reqEmail === emailFilter;
         if (!matches && reqEmail) {
-          console.log(`Email mismatch - Looking for: "${emailFilter}", Found: "${reqEmail}"`)
+          console.log(
+            `Email mismatch - Looking for: "${emailFilter}", Found: "${reqEmail}"`
+          );
         }
-        return matches
-      })
-      console.log('GET /api/service-requests - After email filter:', 
-        `${beforeCount} -> ${requests.length} requests`)
+        return matches;
+      });
+      console.log(
+        "GET /api/service-requests - After email filter:",
+        `${beforeCount} -> ${requests.length} requests`
+      );
       if (beforeCount > 0 && requests.length === 0) {
-        console.log('WARNING: Found', beforeCount, 'requests but none matched email:', emailFilter)
-        console.log('All emails in DB:', allRequestEmails.slice(0, 10).map(e => `"${e}"`))
+        console.log(
+          "WARNING: Found",
+          beforeCount,
+          "requests but none matched email:",
+          emailFilter
+        );
+        console.log(
+          "All emails in DB:",
+          allRequestEmails.slice(0, 10).map((e) => `"${e}"`)
+        );
       }
     }
 
-    console.log('GET /api/service-requests - Returning:', requests.length, 'requests')
-    return NextResponse.json(requests)
+    console.log(
+      "GET /api/service-requests - Returning:",
+      requests.length,
+      "requests"
+    );
+    return NextResponse.json(requests);
   } catch (error: any) {
-    console.error('Get service requests error:', error)
+    console.error("Get service requests error:", error);
     return NextResponse.json(
-      { error: 'Failed to fetch service requests' },
+      { error: "Failed to fetch service requests" },
       { status: 500 }
-    )
+    );
   }
 }
-

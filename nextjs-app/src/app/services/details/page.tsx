@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, Suspense } from 'next/navigation'
 
 const serviceDetails: Record<string, {
   title: string
@@ -318,7 +318,7 @@ const serviceDetails: Record<string, {
   },
 }
 
-export default function ServiceDetailsPage() {
+function ServiceDetailsContent() {
   const searchParams = useSearchParams()
   const category = searchParams.get('category') || 'Standard Apartment Cleaning'
   const details = serviceDetails[category] || serviceDetails['Standard Apartment Cleaning']
@@ -389,6 +389,20 @@ export default function ServiceDetailsPage() {
         </div>
       </main>
     </div>
+  )
+}
+
+export default function ServiceDetailsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center min-h-screen">
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      }
+    >
+      <ServiceDetailsContent />
+    </Suspense>
   )
 }
 

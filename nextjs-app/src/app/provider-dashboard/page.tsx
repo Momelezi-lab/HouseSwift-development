@@ -1,136 +1,141 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import Link from 'next/link'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { serviceRequestApi, providerApi } from '@/lib/api'
-import { formatCurrency } from '@/lib/utils'
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { serviceRequestApi, providerApi } from "@/lib/api";
+import { formatCurrency } from "@/lib/utils";
 
 export default function ProviderDashboardPage() {
-  const [user, setUser] = useState<any>(null)
-  const [provider, setProvider] = useState<any>(null)
-  const queryClient = useQueryClient()
+  const [user, setUser] = useState<any>(null);
+  const [provider, setProvider] = useState<any>(null);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
-    const userData = localStorage.getItem('user')
+    const userData = localStorage.getItem("user");
     if (userData) {
-      const parsedUser = JSON.parse(userData)
-      setUser(parsedUser)
+      const parsedUser = JSON.parse(userData);
+      setUser(parsedUser);
     }
-  }, [])
+  }, []);
 
   // Fetch provider details
   const { data: providerData } = useQuery({
-    queryKey: ['provider', user?.email],
+    queryKey: ["provider", user?.email],
     queryFn: async () => {
-      if (!user?.email) return null
-      const providers = await providerApi.getAll()
-      return providers.find((p: any) => p.email === user.email)
+      if (!user?.email) return null;
+      const providers = await providerApi.getAll();
+      return providers.find((p: any) => p.email === user.email);
     },
     enabled: !!user?.email,
-  })
+  });
 
   useEffect(() => {
     if (providerData) {
-      setProvider(providerData)
+      setProvider(providerData);
     }
-  }, [providerData])
+  }, [providerData]);
 
   // Fetch available jobs (pending jobs that match provider's service type)
   const { data: availableJobs, isLoading: isLoadingAvailable } = useQuery({
-    queryKey: ['available-jobs', provider?.serviceType, provider?.id],
+    queryKey: ["available-jobs", provider?.serviceType, provider?.id],
     queryFn: async () => {
-      if (!provider?.serviceType) return []
-      const allRequests = await serviceRequestApi.getAll({ status: 'pending' })
+      if (!provider?.serviceType) return [];
+      const allRequests = await serviceRequestApi.getAll({ status: "pending" });
       // Filter jobs that match the provider's service type and are not already assigned
       return allRequests.filter((job: any) => {
         // Skip jobs that are already assigned to a provider
-        if (job.assignedProviderId) return false
-        
-        if (!job.selectedItems) return false
+        if (job.assignedProviderId) return false;
+
+        if (!job.selectedItems) return false;
         try {
-          const items = JSON.parse(job.selectedItems)
-          return items.some((item: any) => 
-            item.type === provider.serviceType || item.category === provider.serviceType
-          )
+          const items = JSON.parse(job.selectedItems);
+          return items.some(
+            (item: any) =>
+              item.type === provider.serviceType ||
+              item.category === provider.serviceType
+          );
         } catch {
-          return false
+          return false;
         }
-      })
+      });
     },
     enabled: !!provider?.serviceType,
-  })
+  });
 
   // Fetch provider's accepted jobs
   const { data: acceptedJobs, isLoading: isLoadingAccepted } = useQuery({
-    queryKey: ['provider-jobs', user?.email],
+    queryKey: ["provider-jobs", user?.email],
     queryFn: async () => {
-      if (!user?.email) return []
-      const allRequests = await serviceRequestApi.getAll()
-      return allRequests.filter((job: any) => job.providerEmail === user.email)
+      if (!user?.email) return [];
+      const allRequests = await serviceRequestApi.getAll();
+      return allRequests.filter((job: any) => job.providerEmail === user.email);
     },
     enabled: !!user?.email,
-  })
+  });
 
   // Accept job mutation
   const acceptJobMutation = useMutation({
     mutationFn: async (requestId: number) => {
       return serviceRequestApi.update(requestId, {
         assignedProviderId: provider.id,
-        status: 'confirmed',
-      })
+        status: "confirmed",
+      });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['available-jobs'] })
-      queryClient.invalidateQueries({ queryKey: ['provider-jobs'] })
+      queryClient.invalidateQueries({ queryKey: ["available-jobs"] });
+      queryClient.invalidateQueries({ queryKey: ["provider-jobs"] });
     },
-  })
+  });
 
   // Calculate revenue and next payout
   const calculateStats = () => {
-    if (!acceptedJobs) return { totalRevenue: 0, nextPayout: null, completedJobs: 0 }
+    if (!acceptedJobs)
+      return { totalRevenue: 0, nextPayout: null, completedJobs: 0 };
 
-    const completedJobs = acceptedJobs.filter((job: any) => 
-      job.status === 'completed' || job.status === 'confirmed'
-    )
+    const completedJobs = acceptedJobs.filter(
+      (job: any) => job.status === "completed" || job.status === "confirmed"
+    );
 
     const totalRevenue = completedJobs.reduce((sum: number, job: any) => {
-      return sum + (job.totalProviderPayout || 0)
-    }, 0)
+      return sum + (job.totalProviderPayout || 0);
+    }, 0);
 
     // Calculate next weekly payout (every Monday)
-    const today = new Date()
-    const dayOfWeek = today.getDay()
-    const daysUntilMonday = dayOfWeek === 0 ? 1 : (8 - dayOfWeek) % 7 || 7
-    const nextPayout = new Date(today)
-    nextPayout.setDate(today.getDate() + daysUntilMonday)
-    nextPayout.setHours(0, 0, 0, 0)
+    const today = new Date();
+    const dayOfWeek = today.getDay();
+    const daysUntilMonday = dayOfWeek === 0 ? 1 : (8 - dayOfWeek) % 7 || 7;
+    const nextPayout = new Date(today);
+    nextPayout.setDate(today.getDate() + daysUntilMonday);
+    nextPayout.setHours(0, 0, 0, 0);
 
-    return { totalRevenue, nextPayout, completedJobs: completedJobs.length }
-  }
+    return { totalRevenue, nextPayout, completedJobs: completedJobs.length };
+  };
 
-  const { totalRevenue, nextPayout, completedJobs } = calculateStats()
+  const { totalRevenue, nextPayout, completedJobs } = calculateStats();
 
   const formatDate = (date: string | Date) => {
-    if (!date) return 'N/A'
-    const d = typeof date === 'string' ? new Date(date) : date
-    return d.toLocaleDateString('en-ZA', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    })
-  }
+    if (!date) return "N/A";
+    const d = typeof date === "string" ? new Date(date) : date;
+    return d.toLocaleDateString("en-ZA", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  };
 
   const formatTime = (time: string) => {
-    if (!time) return 'N/A'
-    return time.substring(0, 5) // HH:MM format
-  }
+    if (!time) return "N/A";
+    return time.substring(0, 5); // HH:MM format
+  };
 
   if (!user) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
-          <p className="text-gray-600 mb-4">Please log in to view your dashboard</p>
+          <p className="text-gray-600 mb-4">
+            Please log in to view your dashboard
+          </p>
           <Link
             href="/login"
             className="inline-block bg-[#2563EB] text-white px-8 py-3 rounded-xl font-bold hover:bg-[#1E40AF] transition-all"
@@ -139,14 +144,16 @@ export default function ProviderDashboardPage() {
           </Link>
         </div>
       </div>
-    )
+    );
   }
 
-  if (user.role !== 'provider') {
+  if (user.role !== "provider") {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
-          <p className="text-gray-600 mb-4">This page is only for service providers</p>
+          <p className="text-gray-600 mb-4">
+            This page is only for service providers
+          </p>
           <Link
             href="/profile"
             className="inline-block bg-[#2563EB] text-white px-8 py-3 rounded-xl font-bold hover:bg-[#1E40AF] transition-all"
@@ -155,7 +162,7 @@ export default function ProviderDashboardPage() {
           </Link>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -169,9 +176,12 @@ export default function ProviderDashboardPage() {
           >
             ← Back to Home
           </Link>
-          <h1 className="text-4xl md:text-5xl font-extrabold mb-2">Provider Dashboard</h1>
+          <h1 className="text-4xl md:text-5xl font-extrabold mb-2">
+            Provider Dashboard
+          </h1>
           <p className="text-xl text-white/90">
-            {provider?.name || user.name} - {provider?.serviceType || 'Service Provider'}
+            {provider?.name || user.name} -{" "}
+            {provider?.serviceType || "Service Provider"}
           </p>
         </div>
       </header>
@@ -180,28 +190,40 @@ export default function ProviderDashboardPage() {
       <main className="max-w-6xl mx-auto px-4 py-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-gradient-to-br from-[#2563EB] to-[#1E40AF] rounded-2xl p-6 text-white shadow-xl">
-            <h3 className="text-sm font-semibold text-white/90 mb-2">Total Revenue</h3>
+            <h3 className="text-sm font-semibold text-white/90 mb-2">
+              Total Revenue
+            </h3>
             <p className="text-3xl font-bold">{formatCurrency(totalRevenue)}</p>
-            <p className="text-sm text-white/80 mt-2">{completedJobs} completed jobs</p>
+            <p className="text-sm text-white/80 mt-2">
+              {completedJobs} completed jobs
+            </p>
           </div>
 
           <div className="bg-gradient-to-br from-[#10B981] to-[#059669] rounded-2xl p-6 text-white shadow-xl">
-            <h3 className="text-sm font-semibold text-white/90 mb-2">Next Weekly Payout</h3>
+            <h3 className="text-sm font-semibold text-white/90 mb-2">
+              Next Weekly Payout
+            </h3>
             <p className="text-3xl font-bold">
-              {nextPayout ? formatDate(nextPayout) : 'N/A'}
+              {nextPayout ? formatDate(nextPayout) : "N/A"}
             </p>
             <p className="text-sm text-white/80 mt-2">
               {nextPayout
-                ? `${Math.ceil((nextPayout.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))} days`
-                : ''}
+                ? `${Math.ceil(
+                    (nextPayout.getTime() - new Date().getTime()) /
+                      (1000 * 60 * 60 * 24)
+                  )} days`
+                : ""}
             </p>
           </div>
 
           <div className="bg-gradient-to-br from-[#F59E0B] to-[#D97706] rounded-2xl p-6 text-white shadow-xl">
-            <h3 className="text-sm font-semibold text-white/90 mb-2">Active Jobs</h3>
+            <h3 className="text-sm font-semibold text-white/90 mb-2">
+              Active Jobs
+            </h3>
             <p className="text-3xl font-bold">
-              {acceptedJobs?.filter((j: any) => 
-                j.status === 'confirmed' || j.status === 'in_progress'
+              {acceptedJobs?.filter(
+                (j: any) =>
+                  j.status === "confirmed" || j.status === "in_progress"
               ).length || 0}
             </p>
             <p className="text-sm text-white/80 mt-2">In progress</p>
@@ -210,7 +232,9 @@ export default function ProviderDashboardPage() {
 
         {/* Available Jobs Section */}
         <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100 mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Available Jobs</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">
+            Available Jobs
+          </h2>
           {isLoadingAvailable ? (
             <div className="text-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b border-[#2563EB] mx-auto mb-4"></div>
@@ -229,7 +253,8 @@ export default function ProviderDashboardPage() {
                         Request #{job.requestId}
                       </h3>
                       <p className="text-gray-600">
-                        {formatDate(job.preferredDate)} at {formatTime(job.preferredTime)}
+                        {formatDate(job.preferredDate)} at{" "}
+                        {formatTime(job.preferredTime)}
                       </p>
                     </div>
                     <span className="px-4 py-2 bg-yellow-100 text-yellow-800 rounded-full text-sm font-semibold border-2 border-yellow-200">
@@ -240,14 +265,22 @@ export default function ProviderDashboardPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div>
                       <p className="text-sm text-gray-600 mb-1">Customer</p>
-                      <p className="font-semibold text-gray-900">{job.customerName}</p>
-                      <p className="text-sm text-gray-600">{job.customerPhone}</p>
+                      <p className="font-semibold text-gray-900">
+                        {job.customerName}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        {job.customerPhone}
+                      </p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-600 mb-1">Address</p>
-                      <p className="font-semibold text-gray-900">{job.customerAddress}</p>
+                      <p className="font-semibold text-gray-900">
+                        {job.customerAddress}
+                      </p>
                       {job.unitNumber && (
-                        <p className="text-sm text-gray-600">Unit {job.unitNumber}</p>
+                        <p className="text-sm text-gray-600">
+                          Unit {job.unitNumber}
+                        </p>
                       )}
                     </div>
                   </div>
@@ -264,7 +297,9 @@ export default function ProviderDashboardPage() {
                       disabled={acceptJobMutation.isPending}
                       className="bg-[#2563EB] text-white px-6 py-3 rounded-xl font-bold hover:bg-[#1E40AF] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {acceptJobMutation.isPending ? 'Accepting...' : 'Accept Job'}
+                      {acceptJobMutation.isPending
+                        ? "Accepting..."
+                        : "Accept Job"}
                     </button>
                   </div>
                 </div>
@@ -282,7 +317,9 @@ export default function ProviderDashboardPage() {
 
         {/* Accepted Jobs Section */}
         <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">My Accepted Jobs</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">
+            My Accepted Jobs
+          </h2>
           {isLoadingAccepted ? (
             <div className="text-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b border-[#2563EB] mx-auto mb-4"></div>
@@ -301,33 +338,43 @@ export default function ProviderDashboardPage() {
                         Request #{job.requestId}
                       </h3>
                       <p className="text-gray-600">
-                        {formatDate(job.preferredDate)} at {formatTime(job.preferredTime)}
+                        {formatDate(job.preferredDate)} at{" "}
+                        {formatTime(job.preferredTime)}
                       </p>
                     </div>
                     <span
                       className={`px-4 py-2 rounded-full text-sm font-semibold border-2 ${
-                        job.status === 'completed'
-                          ? 'bg-[#10B981]/10 text-[#10B981] border-[#10B981]'
-                          : job.status === 'confirmed'
-                          ? 'bg-blue-100 text-blue-800 border-blue-200'
-                          : 'bg-yellow-100 text-yellow-800 border-yellow-200'
+                        job.status === "completed"
+                          ? "bg-[#10B981]/10 text-[#10B981] border-[#10B981]"
+                          : job.status === "confirmed"
+                          ? "bg-blue-100 text-blue-800 border-blue-200"
+                          : "bg-yellow-100 text-yellow-800 border-yellow-200"
                       }`}
                     >
-                      {job.status?.charAt(0).toUpperCase() + job.status?.slice(1)}
+                      {job.status?.charAt(0).toUpperCase() +
+                        job.status?.slice(1)}
                     </span>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div>
                       <p className="text-sm text-gray-600 mb-1">Customer</p>
-                      <p className="font-semibold text-gray-900">{job.customerName}</p>
-                      <p className="text-sm text-gray-600">{job.customerPhone}</p>
+                      <p className="font-semibold text-gray-900">
+                        {job.customerName}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        {job.customerPhone}
+                      </p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-600 mb-1">Address</p>
-                      <p className="font-semibold text-gray-900">{job.customerAddress}</p>
+                      <p className="font-semibold text-gray-900">
+                        {job.customerAddress}
+                      </p>
                       {job.unitNumber && (
-                        <p className="text-sm text-gray-600">Unit {job.unitNumber}</p>
+                        <p className="text-sm text-gray-600">
+                          Unit {job.unitNumber}
+                        </p>
                       )}
                     </div>
                   </div>
@@ -359,6 +406,5 @@ export default function ProviderDashboardPage() {
         </div>
       </main>
     </div>
-  )
+  );
 }
-

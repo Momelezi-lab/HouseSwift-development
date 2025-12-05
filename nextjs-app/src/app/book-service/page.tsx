@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { pricingApi, serviceRequestApi } from "@/lib/api";
@@ -37,7 +37,7 @@ const SERVICE_CATEGORIES = [
   "Empty House Deep Cleaning",
 ];
 
-export default function BookServicePage() {
+function BookServiceContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -811,5 +811,19 @@ export default function BookServicePage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function BookServicePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center min-h-screen">
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      }
+    >
+      <BookServiceContent />
+    </Suspense>
   );
 }
