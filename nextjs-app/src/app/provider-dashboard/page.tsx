@@ -28,10 +28,13 @@ export default function ProviderDashboardPage() {
       return providers.find((p: any) => p.email === user.email)
     },
     enabled: !!user?.email,
-    onSuccess: (data) => {
-      if (data) setProvider(data)
-    },
   })
+
+  useEffect(() => {
+    if (providerData) {
+      setProvider(providerData)
+    }
+  }, [providerData])
 
   // Fetch available jobs (pending jobs that match provider's service type)
   const { data: availableJobs, isLoading: isLoadingAvailable } = useQuery({
