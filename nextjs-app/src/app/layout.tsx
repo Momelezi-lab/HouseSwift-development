@@ -20,6 +20,7 @@ export default function RootLayout({
     <html lang="en" style={{ colorScheme: 'light' }}>
       <head>
         <meta name="color-scheme" content="light" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
       </head>
       <body className={inter.className} style={{ colorScheme: 'light' }}>
         <Providers>

@@ -111,17 +111,20 @@ export function Navigation() {
           </div>
 
           {/* Mobile Menu Button */}
-          <button
-            onClick={() => setIsOpen(!isOpen)}
-            className="md:hidden p-2 rounded-lg hover:bg-gray-100"
-          >
-            <span className="text-2xl">{isOpen ? '✕' : '☰'}</span>
-          </button>
+                  <button
+                    onClick={() => setIsOpen(!isOpen)}
+                    aria-label="Toggle navigation"
+                    aria-expanded={isOpen}
+                    aria-controls="mobile-menu"
+                    className="md:hidden p-2 rounded-lg hover:bg-gray-100"
+                  >
+                    <span className="text-2xl">{isOpen ? '✕' : '☰'}</span>
+                  </button>
         </div>
 
         {/* Mobile Navigation */}
         {isOpen && (
-          <div className="md:hidden py-4 space-y-2 animate-fade-in">
+          <div id="mobile-menu" className="md:hidden py-4 space-y-2 animate-fade-in">
             {navItems.map((item) => (
               <Link
                 key={item.href}
