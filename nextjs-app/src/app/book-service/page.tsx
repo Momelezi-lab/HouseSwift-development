@@ -281,15 +281,15 @@ function BookServiceContent() {
                 {/* Category Selection - Always show when no category selected */}
                 {!selectedCategory && (
                   <div id="category-selection" className="w-full">
-                    <h3 className="text-lg font-semibold mb-6 text-[#6B7280]">
+                    <h3 className="text-base sm:text-lg font-semibold mb-6 text-[#6B7280]">
                       Choose a Service Category
                     </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
                       {SERVICE_CATEGORIES.map((category, index) => (
                         <div
                           key={`category-${category}-${index}`}
                           onClick={() => handleCategorySelect(category)}
-                          className="group category-card bg-[#2563EB]/10 border-2 border-[#D1D5DB] rounded-xl p-5 cursor-pointer hover:bg-[#2563EB]/20 hover:border-[#2563EB] hover:shadow-lg transform hover:scale-105 transition-all duration-300"
+                          className="group category-card bg-[#2563EB]/10 border-2 border-[#D1D5DB] rounded-xl p-3 sm:p-5 cursor-pointer hover:bg-[#2563EB]/20 hover:border-[#2563EB] hover:shadow-lg transform hover:scale-105 transition-all duration-300"
                           role="button"
                           tabIndex={0}
                           onKeyDown={(e) => {
@@ -299,15 +299,15 @@ function BookServiceContent() {
                             }
                           }}
                         >
-                          <div className="flex items-center justify-between mb-2">
-                            <h4 className="font-bold text-[#111827] group-hover:text-[#2563EB] transition-colors text-base">
+                          <div className="flex items-start justify-between mb-2">
+                            <h4 className="font-bold text-[#111827] group-hover:text-[#2563EB] transition-colors text-xs sm:text-base leading-tight">
                               {category}
                             </h4>
-                            <span className="text-[#2563EB] opacity-0 group-hover:opacity-100 transition-opacity text-xl">
+                            <span className="text-[#2563EB] opacity-0 group-hover:opacity-100 transition-opacity text-lg sm:text-xl flex-shrink-0 ml-1">
                               →
                             </span>
                           </div>
-                          <p className="text-sm text-gray-600 mb-2">
+                          <p className="text-xs sm:text-sm text-gray-600 mb-2 hidden sm:block">
                             Click to view options
                           </p>
                           <Link
@@ -386,58 +386,66 @@ function BookServiceContent() {
                       pricingData &&
                       pricingData.length > 0 && (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {pricingData.map((item: any, index: number) => (
-                            <div
-                              key={item.id}
-                              className="group service-type-card bg-white border border-[#D1D5DB] rounded-xl p-5 hover:border-[#2563EB] hover:shadow-xl transform hover:scale-105 transition-all duration-300"
-                              style={{ animationDelay: `${index * 100}ms` }}
-                            >
-                              <div className="flex justify-between items-start mb-3">
-                                <h4 className="font-bold text-[#111827] text-lg">
-                                  {item.serviceType}
-                                </h4>
-                                <span className="text-xl font-extrabold text-[#2563EB]">
-                                  {formatCurrency(
-                                    parseFloat(
-                                      item.customerDisplayPrice.toString()
-                                    )
-                                  )}
-                                </span>
-                              </div>
-                              {item.isWhiteApplicable && (
-                                <div className="mb-3 p-2 bg-amber-50 border border-amber-200 rounded-lg">
-                                  <p className="text-xs text-amber-800 font-medium">
-                                    ⚪ +
-                                    {formatCurrency(
+                          {pricingData.map((item: any, index: number) => {
+                            const price = parseFloat(
+                              item.customerDisplayPrice.toString()
+                            );
+
+                            return (
+                              <div
+                                key={item.id}
+                                className="group service-type-card bg-white border border-[#D1D5DB] rounded-xl p-5 hover:border-[#2563EB] hover:shadow-xl transform hover:scale-105 transition-all duration-300"
+                                style={{ animationDelay: `${index * 100}ms` }}
+                              >
+                                <div className="flex justify-between items-start mb-3">
+                                  <h4 className="font-bold text-[#111827] text-lg max-w-[62%]">
+                                    {item.serviceType}
+                                  </h4>
+                                  <div className="text-right flex flex-col items-end">
+                                    <div className="text-xs sm:text-sm font-semibold text-[#2563EB]">
+                                      R
+                                    </div>
+                                    <div className="text-xl sm:text-2xl font-extrabold text-[#2563EB] leading-tight">
+                                      {price.toFixed(2)}
+                                    </div>
+                                  </div>
+                                </div>
+                                {item.isWhiteApplicable && (
+                                  <div className="mb-3 p-2 bg-amber-50 border border-amber-200 rounded-lg">
+                                    <p className="text-xs text-amber-800 font-medium">
+                                      ⚪ +
+                                      {formatCurrency(
+                                        parseFloat(
+                                          item.colorSurchargeCustomer.toString()
+                                        )
+                                      )}{" "}
+                                      if white
+                                    </p>
+                                  </div>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    handleAddToCart(
+                                      item.serviceCategory,
+                                      item.serviceType,
+                                      parseFloat(
+                                        item.customerDisplayPrice.toString()
+                                      ),
+                                      item.isWhiteApplicable,
                                       parseFloat(
                                         item.colorSurchargeCustomer.toString()
                                       )
-                                    )}{" "}
-                                    if white
-                                  </p>
-                                </div>
-                              )}
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  handleAddToCart(
-                                    item.serviceCategory,
-                                    item.serviceType,
-                                    parseFloat(
-                                      item.customerDisplayPrice.toString()
-                                    ),
-                                    item.isWhiteApplicable,
-                                    parseFloat(
-                                      item.colorSurchargeCustomer.toString()
                                     )
-                                  )
-                                }
-                                className="w-full bg-[#2563EB] text-white py-3 px-4 rounded-xl hover:bg-[#2563EB]/90 transition-all font-bold shadow-lg hover:shadow-xl transform hover:scale-105"
-                              >
-                                ➕ Add to Cart
-                              </button>
-                            </div>
-                          ))}
+                                  }
+                                  className="w-full bg-[#2563EB] text-white py-4 px-6 rounded-2xl hover:bg-[#2563EB]/90 transition-all font-bold shadow-lg hover:shadow-xl transform hover:scale-105 inline-flex items-center justify-center gap-3"
+                                >
+                                  <span className="text-xl">➕</span>
+                                  <span className="text-base">Add to Cart</span>
+                                </button>
+                              </div>
+                            );
+                          })}
                         </div>
                       )}
                   </div>

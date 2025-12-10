@@ -14,7 +14,7 @@
     --background-start-rgb: 0, 0, 0;
     --background-end-rgb: 0, 0, 0;
   }
-  
+
   /* Force inputs to ignore dark mode completely */
   input,
   textarea,
@@ -27,7 +27,7 @@
 
 body {
   color: rgb(var(--foreground-rgb));
-  background: #F3F4F6;
+  background: #f3f4f6;
 }
 
 /* CRITICAL: Force input text to be black - must be after body to override */
@@ -60,7 +60,10 @@ html input:-webkit-autofill:active {
 * input[type="date"],
 * input[type="time"],
 * input[type="datetime-local"],
-* input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="reset"]),
+*
+  input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not(
+    [type="button"]
+  ):not([type="reset"]),
 * textarea,
 * select {
   color: #000000 !important;
@@ -110,7 +113,8 @@ html input:-webkit-autofill:active {
 }
 
 @keyframes pulse-glow {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow: 0 0 20px rgba(37, 99, 235, 0.3);
   }
   50% {
@@ -143,7 +147,9 @@ input[type="number"],
 input[type="date"],
 input[type="time"],
 input[type="datetime-local"],
-input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="reset"]),
+input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not(
+    [type="button"]
+  ):not([type="reset"]),
 textarea,
 select {
   color: #111827 !important; /* text-gray-900 - dark text */
@@ -186,7 +192,9 @@ textarea::placeholder {
   input[type="date"],
   input[type="time"],
   input[type="datetime-local"],
-  input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="reset"]),
+  input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not(
+      [type="button"]
+    ):not([type="reset"]),
   textarea,
   select {
     color: #111827 !important; /* Keep dark text even in dark mode */
@@ -194,7 +202,7 @@ textarea::placeholder {
     -webkit-text-fill-color: #111827 !important; /* Override Safari autofill */
     caret-color: #111827 !important;
   }
-  
+
   input:-webkit-autofill,
   input:-webkit-autofill:hover,
   input:-webkit-autofill:focus,
@@ -205,7 +213,7 @@ textarea::placeholder {
     color: #111827 !important;
     background-color: #ffffff !important;
   }
-  
+
   input[type="text"]::placeholder,
   input[type="email"]::placeholder,
   input[type="password"]::placeholder,
@@ -223,6 +231,41 @@ textarea::placeholder {
 html {
   scroll-behavior: smooth;
   color-scheme: light;
+}
+
+/* Responsive base font sizing: slightly smaller on narrow screens so text fits better */
+html {
+  font-size: 16px; /* default */
+}
+
+@media (max-width: 640px) {
+  /* small screens (phones) */
+  html {
+    font-size: 15px;
+  }
+}
+
+@media (max-width: 420px) {
+  /* very small phones */
+  html {
+    font-size: 14px;
+  }
+}
+
+/* Slightly scale down large headings on mobile for better fit */
+h1 {
+  font-size: 2.25rem;
+}
+h2 {
+  font-size: 1.75rem;
+}
+@media (max-width: 640px) {
+  h1 {
+    font-size: 1.75rem;
+  }
+  h2 {
+    font-size: 1.4rem;
+  }
 }
 
 /* CRITICAL OVERRIDE: Force all inputs to use light scheme and black text */
@@ -270,11 +313,10 @@ textarea:-webkit-autofill:active {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #2563EB;
+  background: #2563eb;
   border-radius: 5px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #1E40AF;
+  background: #1e40af;
 }
-

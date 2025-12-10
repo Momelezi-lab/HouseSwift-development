@@ -1,62 +1,62 @@
-'use client'
+"use client";
 
-import { useState, Suspense } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { useMutation } from '@tanstack/react-query'
-import { authApi } from '@/lib/api'
-import Link from 'next/link'
-import { Logo } from '@/components/Logo'
+import { useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useMutation } from "@tanstack/react-query";
+import { authApi } from "@/lib/api";
+import Link from "next/link";
+import { Logo } from "@/components/Logo";
 
 function LoginContent() {
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
   const loginMutation = useMutation({
     mutationFn: authApi.login,
     onSuccess: (data) => {
-      console.log('Login success, user data:', data.user)
+      console.log("Login success, user data:", data.user);
       // Store user data
-      localStorage.setItem('user', JSON.stringify(data.user))
-      
+      localStorage.setItem("user", JSON.stringify(data.user));
+
       // Trigger storage event to update navigation
-      window.dispatchEvent(new Event('storage'))
-      
+      window.dispatchEvent(new Event("storage"));
+
       // Check user role
-      const userRole = data.user?.role
-      const isAdminUser = userRole === 'admin'
-      const isProvider = userRole === 'provider'
-      console.log('User role:', userRole)
-      const redirectTo = searchParams.get('redirect')
-      
+      const userRole = data.user?.role;
+      const isAdminUser = userRole === "admin";
+      const isProvider = userRole === "provider";
+      console.log("User role:", userRole);
+      const redirectTo = searchParams.get("redirect");
+
       // Redirect based on role or redirect parameter
       if (redirectTo && isAdminUser) {
-        console.log('Redirecting to:', redirectTo)
-        router.push(redirectTo)
+        console.log("Redirecting to:", redirectTo);
+        router.push(redirectTo);
       } else if (isAdminUser) {
-        console.log('Redirecting to admin dashboard')
-        router.push('/admin')
+        console.log("Redirecting to admin dashboard");
+        router.push("/admin");
       } else if (isProvider) {
-        console.log('Redirecting to provider dashboard')
-        router.push('/provider-dashboard')
+        console.log("Redirecting to provider dashboard");
+        router.push("/provider-dashboard");
       } else {
-        console.log('Redirecting to home page')
-        router.push('/')
+        console.log("Redirecting to home page");
+        router.push("/");
       }
     },
     onError: (error: any) => {
-      console.error('Login error:', error)
-      setError(error.response?.data?.error || 'Login failed')
+      console.error("Login error:", error);
+      setError(error.response?.data?.error || "Login failed");
     },
-  })
+  });
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-    loginMutation.mutate({ email, password })
-  }
+    e.preventDefault();
+    setError("");
+    loginMutation.mutate({ email, password });
+  };
 
   return (
     <div className="min-h-screen bg-[#F3F4F6] flex items-center justify-center p-4">
@@ -67,7 +67,9 @@ function LoginContent() {
             <div className="flex justify-center mb-4">
               <Logo size="lg" />
             </div>
-            <h1 className="text-4xl font-extrabold text-[#111827] mb-2">Welcome Back</h1>
+            <h1 className="text-4xl font-extrabold text-[#111827] mb-2">
+              Welcome Back
+            </h1>
             <p className="text-[#6B7280]">Sign in to your HomeSwift account</p>
           </div>
 
@@ -94,7 +96,9 @@ function LoginContent() {
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-[#111827] mb-2">Password</label>
+              <label className="block text-sm font-bold text-[#111827] mb-2">
+                Password
+              </label>
               <input
                 type="password"
                 value={password}
@@ -116,7 +120,7 @@ function LoginContent() {
                   Signing in...
                 </span>
               ) : (
-                'Sign In'
+                "Sign In"
               )}
             </button>
           </form>
@@ -124,8 +128,11 @@ function LoginContent() {
           {/* Footer */}
           <div className="mt-6 text-center">
             <p className="text-[#6B7280]">
-              Don't have an account?{' '}
-              <Link href="/signup" className="text-[#2563EB] font-bold hover:underline">
+              Don't have an account?{" "}
+              <Link
+                href="/signup"
+                className="text-[#2563EB] font-bold hover:underline"
+              >
                 Sign up
               </Link>
             </p>
@@ -139,7 +146,7 @@ function LoginContent() {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 export default function LoginPage() {
@@ -153,6 +160,5 @@ export default function LoginPage() {
     >
       <LoginContent />
     </Suspense>
-  )
+  );
 }
-

@@ -1,50 +1,50 @@
-import Link from 'next/link'
-import Image from 'next/image'
+import Link from "next/link";
+import Image from "next/image";
 
 const services = [
   {
-    title: 'Cleaning Services',
-    description: 'Professional deep cleaning for your home',
-    href: '/services/cleaning',
-    icon: '🧹',
+    title: "Cleaning Services",
+    description: "Professional deep cleaning for your home",
+    href: "/services/cleaning",
+    icon: "🧹",
     available: true,
   },
   {
-    title: 'Plumbing',
-    description: 'Expert plumbing repairs and installations',
-    href: '/book-plumbing',
-    icon: '🔧',
+    title: "Plumbing",
+    description: "Expert plumbing repairs and installations",
+    href: "/book-plumbing",
+    icon: "🔧",
     available: false,
   },
   {
-    title: 'Electrical',
-    description: 'Licensed electricians for all your needs',
-    href: '/book-electrical',
-    icon: '⚡',
+    title: "Electrical",
+    description: "Licensed electricians for all your needs",
+    href: "/book-electrical",
+    icon: "⚡",
     available: false,
   },
   {
-    title: 'Pest Control',
-    description: 'Effective pest elimination solutions',
-    href: '/book-pestcontrol',
-    icon: '🐛',
+    title: "Pest Control",
+    description: "Effective pest elimination solutions",
+    href: "/book-pestcontrol",
+    icon: "🐛",
     available: false,
   },
   {
-    title: 'Gardening',
-    description: 'Landscaping and garden maintenance',
-    href: '/book-gardening',
-    icon: '🌳',
+    title: "Gardening",
+    description: "Landscaping and garden maintenance",
+    href: "/book-gardening",
+    icon: "🌳",
     available: false,
   },
   {
-    title: 'Handyman',
-    description: 'General repairs and home fixes',
-    href: '/book-handyman',
-    icon: '🛠️',
+    title: "Handyman",
+    description: "General repairs and home fixes",
+    href: "/book-handyman",
+    icon: "🛠️",
     available: false,
   },
-]
+];
 
 export default function Home() {
   return (
@@ -52,20 +52,20 @@ export default function Home() {
       {/* Hero Section with Blurred Background */}
       <div className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
         {/* Background Image with Blur */}
-        <div 
+        <div
           className="absolute inset-0 z-0"
           style={{
             backgroundImage: `url('https://images.unsplash.com/photo-1581578731548-c64695cc6952?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80')`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            filter: 'blur(4px)',
-            transform: 'scale(1.1)', // Slight scale to hide blur edges
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            filter: "blur(4px)",
+            transform: "scale(1.1)", // Slight scale to hide blur edges
           }}
         />
-        
+
         {/* Primary Blue Overlay with Gradient - Reduced opacity */}
         <div className="absolute inset-0 z-10 bg-gradient-to-br from-[#2563EB]/60 via-[#2563EB]/55 to-[#1E40AF]/65" />
-        
+
         {/* Content */}
         <div className="relative z-20 container mx-auto px-4 py-20 text-center">
           {/* Logo/Brand */}
@@ -83,19 +83,29 @@ export default function Home() {
           </div>
 
           {/* Main Heading */}
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white mb-6 leading-tight animate-fade-in" style={{ animationDelay: '100ms' }}>
+          <h1
+            className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white mb-6 leading-tight animate-fade-in"
+            style={{ animationDelay: "100ms" }}
+          >
             Swift Services,
             <br />
             <span className="text-[#EFF6FF]">Reliable Results</span>
           </h1>
 
           {/* Sub-heading */}
-          <p className="text-lg md:text-xl lg:text-2xl text-white/95 mb-4 font-medium max-w-3xl mx-auto leading-relaxed animate-fade-in" style={{ animationDelay: '200ms' }}>
-            Professional home services at your fingertips. Book trusted professionals for any task, delivered swiftly.
+          <p
+            className="text-lg md:text-xl lg:text-2xl text-white/95 mb-4 font-medium max-w-3xl mx-auto leading-relaxed animate-fade-in"
+            style={{ animationDelay: "200ms" }}
+          >
+            Professional home services at your fingertips. Book trusted
+            professionals for any task, delivered swiftly.
           </p>
 
           {/* CTA Button */}
-          <div className="mt-12 animate-fade-in" style={{ animationDelay: '300ms' }}>
+          <div
+            className="mt-12 animate-fade-in"
+            style={{ animationDelay: "300ms" }}
+          >
             <Link
               href="/book-service"
               className="inline-flex items-center gap-3 bg-white text-[#2563EB] px-10 py-5 rounded-xl font-bold text-lg md:text-xl shadow-2xl hover:bg-[#2563EB] hover:text-white transform hover:scale-105 transition-all duration-300 border-2 border-transparent hover:border-white/20"
@@ -106,7 +116,10 @@ export default function Home() {
           </div>
 
           {/* Secondary CTA */}
-          <div className="mt-6 animate-fade-in" style={{ animationDelay: '400ms' }}>
+          <div
+            className="mt-6 animate-fade-in"
+            style={{ animationDelay: "400ms" }}
+          >
             <Link
               href="/services/cleaning"
               className="inline-flex items-center gap-2 text-white/90 hover:text-white font-semibold text-lg transition-colors"
@@ -123,31 +136,35 @@ export default function Home() {
 
       {/* Services Grid */}
       <div className="container mx-auto px-4 py-20 -mt-16 relative z-30">
-        <div className="bg-white rounded-3xl shadow-2xl p-8 md:p-12">
-          <h2 className="text-4xl md:text-5xl font-bold text-center text-[#111827] mb-4">
+        <div className="bg-white rounded-3xl shadow-2xl p-4 sm:p-8 md:p-12">
+          <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold text-center text-[#111827] mb-2 sm:mb-4">
             Our Services
           </h2>
-          <p className="text-center text-[#6B7280] mb-12 text-lg max-w-2xl mx-auto">
+          <p className="text-center text-[#6B7280] mb-8 sm:mb-12 text-xs sm:text-base md:text-lg max-w-2xl mx-auto">
             Choose from our range of professional home services
           </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 md:gap-8 max-w-6xl mx-auto">
             {services.map((service, index) => (
-              <ServiceCard key={service.title} service={service} index={index} />
+              <ServiceCard
+                key={service.title}
+                service={service}
+                index={index}
+              />
             ))}
           </div>
         </div>
       </div>
 
       {/* Features Section */}
-      <div className="bg-gradient-to-b from-white to-[#F3F4F6] py-20">
+      <div className="bg-gradient-to-b from-white to-[#F3F4F6] py-12 md:py-20">
         <div className="container mx-auto px-4">
-          <h2 className="text-4xl md:text-5xl font-bold text-center text-[#111827] mb-4">
+          <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold text-center text-[#111827] mb-2 sm:mb-4">
             Why Choose HomeSwift?
           </h2>
-          <p className="text-center text-[#6B7280] mb-12 text-lg max-w-2xl mx-auto">
+          <p className="text-center text-[#6B7280] mb-8 sm:mb-12 text-xs sm:text-base md:text-lg max-w-2xl mx-auto">
             Experience the difference with our trusted service platform
           </p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 md:gap-8 max-w-5xl mx-auto">
             <FeatureCard
               icon="⚡"
               title="Fast Service"
@@ -167,51 +184,59 @@ export default function Home() {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 function ServiceCard({
   service,
   index,
 }: {
-  service: (typeof services)[0]
-  index: number
+  service: (typeof services)[0];
+  index: number;
 }) {
   if (!service.available) {
     return (
-        <div className="group relative p-8 rounded-xl bg-[#F3F4F6] border border-[#D1D5DB] opacity-75 cursor-not-allowed transform transition-all duration-300">
-        <div className="absolute top-4 right-4 bg-[#6B7280] text-white text-xs font-bold px-3 py-1 rounded-full">
+      <div className="group relative p-3 sm:p-6 md:p-8 rounded-xl bg-[#F3F4F6] border border-[#D1D5DB] opacity-75 cursor-not-allowed transform transition-all duration-300">
+        <div className="absolute top-2 right-2 sm:top-4 sm:right-4 bg-[#6B7280] text-white text-xs font-bold px-2 py-1 sm:px-3 sm:py-1 rounded-full">
           Coming Soon
         </div>
-        <div className="text-5xl mb-4">{service.icon}</div>
-        <h3 className="text-2xl font-bold text-[#111827] mb-3">{service.title}</h3>
-        <p className="text-[#6B7280]">{service.description}</p>
+        <div className="text-3xl sm:text-4xl md:text-5xl mb-2 sm:mb-4">
+          {service.icon}
+        </div>
+        <h3 className="text-sm sm:text-base md:text-2xl font-bold text-[#111827] mb-2 sm:mb-3">
+          {service.title}
+        </h3>
+        <p className="text-xs sm:text-sm md:text-base text-[#6B7280]">
+          {service.description}
+        </p>
       </div>
-    )
+    );
   }
 
   return (
     <Link
       href={service.href}
-      className="group relative p-8 rounded-xl bg-white border border-[#D1D5DB] hover:border-[#2563EB] shadow-lg hover:shadow-2xl transform hover:scale-105 transition-all duration-300 overflow-hidden"
+      className="group relative p-3 sm:p-6 md:p-8 rounded-xl bg-white border border-[#D1D5DB] hover:border-[#2563EB] shadow-lg hover:shadow-2xl transform hover:scale-105 transition-all duration-300 overflow-hidden"
       style={{ animationDelay: `${index * 100}ms` }}
     >
       {/* Content */}
       <div className="relative z-10">
-        <div className="text-5xl mb-4 transform group-hover:scale-110 transition-transform duration-300">
+        <div className="text-3xl sm:text-4xl md:text-5xl mb-2 sm:mb-4 transform group-hover:scale-110 transition-transform duration-300">
           {service.icon}
         </div>
-        <h3 className="text-2xl font-bold text-[#111827] mb-3 group-hover:text-[#2563EB] transition-colors">
+        <h3 className="text-sm sm:text-base md:text-2xl font-bold text-[#111827] mb-2 sm:mb-3 group-hover:text-[#2563EB] transition-colors">
           {service.title}
         </h3>
-        <p className="text-[#6B7280] mb-4">{service.description}</p>
-        <div className="flex items-center text-[#2563EB] font-semibold group-hover:translate-x-2 transition-transform">
+        <p className="text-xs sm:text-sm md:text-base text-[#6B7280] mb-2 sm:mb-4">
+          {service.description}
+        </p>
+        <div className="flex items-center text-[#2563EB] font-semibold text-xs sm:text-sm md:text-base group-hover:translate-x-2 transition-transform">
           <span>Book Now</span>
           <span className="ml-2">→</span>
         </div>
       </div>
     </Link>
-  )
+  );
 }
 
 function FeatureCard({
@@ -219,16 +244,21 @@ function FeatureCard({
   title,
   description,
 }: {
-  icon: string
-  title: string
-  description: string
+  icon: string;
+  title: string;
+  description: string;
 }) {
   return (
-    <div className="text-center p-8 rounded-xl bg-white border border-[#D1D5DB] hover:border-[#2563EB] hover:shadow-2xl transition-all duration-300 transform hover:scale-105">
-      <div className="text-5xl mb-4 transform hover:scale-110 transition-transform duration-300">{icon}</div>
-      <h3 className="text-2xl font-bold text-[#111827] mb-3">{title}</h3>
-      <p className="text-[#6B7280] leading-relaxed">{description}</p>
+    <div className="text-center p-4 sm:p-6 md:p-8 rounded-xl bg-white border border-[#D1D5DB] hover:border-[#2563EB] hover:shadow-2xl transition-all duration-300 transform hover:scale-105">
+      <div className="text-3xl sm:text-4xl md:text-5xl mb-2 sm:mb-4 transform hover:scale-110 transition-transform duration-300">
+        {icon}
+      </div>
+      <h3 className="text-sm sm:text-base md:text-2xl font-bold text-[#111827] mb-2 sm:mb-3">
+        {title}
+      </h3>
+      <p className="text-xs sm:text-sm md:text-base text-[#6B7280] leading-relaxed">
+        {description}
+      </p>
     </div>
-  )
+  );
 }
-
