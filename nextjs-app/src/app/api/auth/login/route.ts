@@ -1,59 +1,74 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
-import bcrypt from 'bcryptjs'
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import bcrypt from "bcryptjs";
 
 export async function POST(request: NextRequest) {
   try {
-    const data = await request.json()
-    const { email, password } = data
+    const data = await request.json();
+    const { email, password } = data;
 
     if (!email || !password) {
       return NextResponse.json(
-        { error: 'Email and password required' },
+        { error: "Email and password required" },
         { status: 400 }
-      )
+      );
+    }
+
+    // Check database connection
+    try {
+      await prisma.$connect();
+    } catch (dbError) {
+      console.error("Database connection error:", dbError);
+      return NextResponse.json(
+        {
+          error:
+            "Database connection failed. Please check your DATABASE_URL environment variable.",
+        },
+        { status: 500 }
+      );
     }
 
     const user = await prisma.user.findUnique({
       where: { email },
-    })
+    });
 
     if (!user) {
+      console.log(`Login attempt failed: User not found for email: ${email}`);
       return NextResponse.json(
-        { error: 'Invalid email or password' },
+        { error: "Invalid email or password" },
         { status: 401 }
-      )
+      );
     }
 
-    const isValid = await bcrypt.compare(password, user.passwordHash)
+    const isValid = await bcrypt.compare(password, user.passwordHash);
     if (!isValid) {
+      console.log(`Login attempt failed: Invalid password for email: ${email}`);
       return NextResponse.json(
-        { error: 'Invalid email or password' },
+        { error: "Invalid email or password" },
         { status: 401 }
-      )
+      );
     }
 
     // Remove password hash from response, explicitly include role
-    const { passwordHash: _, ...userResponse } = user
-    
+    const { passwordHash: _, ...userResponse } = user;
+
     // Ensure role is included (default to 'customer' if not set)
     const userWithRole = {
       ...userResponse,
-      role: user.role || 'customer',
-    }
+      role: user.role || "customer",
+    };
 
-    console.log('Login API - User role:', user.role, 'User response:', userWithRole)
+    console.log("Login successful - User:", email, "Role:", user.role);
 
     return NextResponse.json({
-      message: 'Login successful',
+      message: "Login successful",
       user: userWithRole,
-    })
+    });
   } catch (error: any) {
-    console.error('Login error:', error)
+    console.error("Login error:", error);
     return NextResponse.json(
-      { error: 'Failed to login' },
+      { error: error.message || "Failed to login" },
       { status: 500 }
-    )
+    );
   }
 }
-
