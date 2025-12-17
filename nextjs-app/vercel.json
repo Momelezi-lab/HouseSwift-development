@@ -3,9 +3,5 @@
   "devCommand": "npm run dev",
   "installCommand": "npm install --legacy-peer-deps",
   "framework": "nextjs",
-  "outputDirectory": ".next",
-  "env": {
-    "PRISMA_GENERATE_DATAPROXY": "true"
-  }
+  "outputDirectory": ".next"
 }
-
