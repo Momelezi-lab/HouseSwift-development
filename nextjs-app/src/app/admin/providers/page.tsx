@@ -43,7 +43,7 @@ export default function ProvidersPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F3F4F6] p-8">
+    <div className="admin-page min-h-screen bg-[#F3F4F6] p-8">
       <div className="max-w-7xl mx-auto">
         <div className="mb-6">
           <Link
@@ -55,7 +55,7 @@ export default function ProvidersPage() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-4xl font-bold text-[#111827] mb-2">Service Providers</h1>
-              <p className="text-gray-600">Manage your service providers</p>
+              <p className="text-gray-700">Manage your service providers</p>
             </div>
             <button
               type="button"
@@ -84,8 +84,8 @@ export default function ProvidersPage() {
         </div>
 
         {providers?.length === 0 && (
-          <div className="text-center py-12 bg-white rounded-2xl shadow-xl">
-            <p className="text-gray-600 mb-4">No providers found</p>
+          <div className="text-center py-12 bg-white rounded-2xl shadow-xl" style={{ colorScheme: 'light' }}>
+            <p className="text-gray-800 mb-4">No providers found</p>
             <button
               onClick={() => setIsAddModalOpen(true)}
               className="px-6 py-3 bg-[#2563EB] text-white rounded-xl font-bold hover:bg-[#2563EB]/90"
@@ -126,33 +126,33 @@ function ProviderCard({
   onDelete: () => void
 }) {
   return (
-    <div className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100 hover:shadow-2xl transform hover:scale-105 transition-all">
+    <div className="ProviderCard bg-white rounded-2xl shadow-xl p-6 border border-gray-100 hover:shadow-2xl transform hover:scale-105 transition-all" style={{ colorScheme: 'light' }}>
       <div className="flex items-center gap-4 mb-4">
         <div className="w-16 h-16 bg-[#2563EB] rounded-full flex items-center justify-center text-2xl text-white font-bold">
           {provider.name.charAt(0)}
         </div>
         <div>
           <h3 className="text-xl font-bold text-[#111827]">{provider.name}</h3>
-          <p className="text-gray-600">{provider.serviceType}</p>
+          <p className="text-gray-700">{provider.serviceType}</p>
         </div>
       </div>
       <div className="space-y-2 text-sm mb-4">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 text-gray-800">
           <span>📞</span>
-          <span>{provider.phone}</span>
+          <span className="text-gray-800">{provider.phone}</span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 text-gray-800">
           <span>✉️</span>
-          <span className="truncate">{provider.email}</span>
+          <span className="truncate text-gray-800">{provider.email}</span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 text-gray-800">
           <span>⭐</span>
-          <span>Rating: {provider.rating?.toFixed(1) || '0.0'}</span>
+          <span className="text-gray-800">Rating: {provider.rating?.toFixed(1) || '0.0'}</span>
         </div>
         {provider.address && (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 text-gray-800">
             <span>📍</span>
-            <span className="truncate">{provider.address}</span>
+            <span className="truncate text-gray-800">{provider.address}</span>
           </div>
         )}
       </div>
@@ -277,7 +277,7 @@ function ProviderModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4" style={{ zIndex: 9999, position: 'fixed' }}>
-      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-auto">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-auto" style={{ colorScheme: 'light' }}>
         <div className="sticky top-0 bg-[#2563EB] text-white p-6 flex items-center justify-between">
           <h2 className="text-2xl font-bold">
             {provider ? 'Edit Provider' : 'Add New Provider'}

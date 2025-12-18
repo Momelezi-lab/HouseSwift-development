@@ -132,7 +132,7 @@ export default function AdminDashboard() {
   ]
 
   return (
-    <div className="min-h-screen bg-[#F3F4F6] flex">
+    <div className="admin-page min-h-screen bg-[#F3F4F6] flex">
       {/* Sidebar */}
       <aside className="w-64 bg-[#2563EB] text-white shadow-2xl">
         <div className="p-6 border-b border-[#D1D5DB]">
@@ -509,6 +509,7 @@ function ProvidersView({ providers }: { providers: any[] }) {
           <div
             key={provider.id}
             className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100 hover:shadow-2xl transform hover:scale-105 transition-all"
+            style={{ colorScheme: 'light' }}
           >
             <div className="flex items-center gap-4 mb-4">
               <div className="w-16 h-16 bg-[#2563EB] rounded-full flex items-center justify-center text-2xl text-white font-bold">
@@ -516,21 +517,21 @@ function ProvidersView({ providers }: { providers: any[] }) {
               </div>
               <div>
                 <h3 className="text-xl font-bold text-gray-900">{provider.name}</h3>
-                <p className="text-gray-600">{provider.serviceType}</p>
+                <p className="text-gray-700">{provider.serviceType}</p>
               </div>
             </div>
             <div className="space-y-2 text-sm">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 text-gray-800">
                 <span>📞</span>
-                <span>{provider.phone}</span>
+                <span className="text-gray-800">{provider.phone}</span>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 text-gray-800">
                 <span>✉️</span>
-                <span>{provider.email}</span>
+                <span className="text-gray-800">{provider.email}</span>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 text-gray-800">
                 <span>⭐</span>
-                <span>Rating: {provider.rating.toFixed(1)}</span>
+                <span className="text-gray-800">Rating: {provider.rating.toFixed(1)}</span>
               </div>
             </div>
             <div className="mt-4 flex gap-2">

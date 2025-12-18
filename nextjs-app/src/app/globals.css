@@ -320,3 +320,72 @@ textarea:-webkit-autofill:active {
 ::-webkit-scrollbar-thumb:hover {
   background: #1e40af;
 }
+
+/* Force text visibility on white backgrounds in dark mode - ONLY for admin pages */
+@media (prefers-color-scheme: dark) {
+  /* Only apply to admin pages using the admin-page class */
+  .admin-page .bg-white,
+  .admin-page [class*="bg-white"] {
+    background-color: #ffffff !important;
+    color-scheme: light !important;
+  }
+  
+  /* Force dark text on white backgrounds - only in admin context */
+  .admin-page .bg-white *,
+  .admin-page [class*="bg-white"] * {
+    color: #111827 !important;
+  }
+  
+  /* Specific text color overrides for better visibility - admin only */
+  .admin-page .bg-white .text-gray-600,
+  .admin-page .bg-white .text-gray-500,
+  .admin-page [class*="bg-white"] .text-gray-600,
+  .admin-page [class*="bg-white"] .text-gray-500 {
+    color: #374151 !important; /* Darker gray for better contrast */
+  }
+  
+  .admin-page .bg-white .text-gray-800,
+  .admin-page [class*="bg-white"] .text-gray-800 {
+    color: #1f2937 !important; /* Very dark gray/black */
+  }
+  
+  /* Ensure headings are visible - admin only */
+  .admin-page .bg-white h1,
+  .admin-page .bg-white h2,
+  .admin-page .bg-white h3,
+  .admin-page .bg-white h4,
+  .admin-page .bg-white h5,
+  .admin-page .bg-white h6,
+  .admin-page [class*="bg-white"] h1,
+  .admin-page [class*="bg-white"] h2,
+  .admin-page [class*="bg-white"] h3,
+  .admin-page [class*="bg-white"] h4,
+  .admin-page [class*="bg-white"] h5,
+  .admin-page [class*="bg-white"] h6 {
+    color: #111827 !important;
+  }
+  
+  /* Ensure paragraphs and spans are visible - admin only */
+  .admin-page .bg-white p,
+  .admin-page .bg-white span,
+  .admin-page [class*="bg-white"] p,
+  .admin-page [class*="bg-white"] span {
+    color: #111827 !important;
+  }
+  
+  /* Provider cards specifically */
+  .ProviderCard.bg-white,
+  .ProviderCard.bg-white * {
+    background-color: #ffffff !important;
+    color: #111827 !important;
+  }
+  
+  .ProviderCard.bg-white .text-gray-600,
+  .ProviderCard.bg-white .text-gray-500 {
+    color: #374151 !important;
+  }
+  
+  .ProviderCard.bg-white .text-gray-800 {
+    color: #1f2937 !important;
+  }
+}
