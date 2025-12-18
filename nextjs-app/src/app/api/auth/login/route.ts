@@ -34,6 +34,16 @@ export async function POST(request: NextRequest) {
 
     if (!user) {
       console.log(`Login attempt failed: User not found for email: ${email}`);
+      // Check if this is an admin login attempt
+      if (email.toLowerCase().includes("admin")) {
+        return NextResponse.json(
+          {
+            error: "Invalid email or password",
+            hint: "Admin user may not exist. Create it at /api/admin/create-admin or visit /setup-admin.html",
+          },
+          { status: 401 }
+        );
+      }
       return NextResponse.json(
         { error: "Invalid email or password" },
         { status: 401 }
