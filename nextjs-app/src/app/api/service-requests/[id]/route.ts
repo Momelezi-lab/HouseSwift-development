@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendEmail, generateEmailTemplates } from "@/lib/email";
+import { onJobCompleted, onJobCancelled } from "@/lib/services/trust-score-service";
+import { addSecurityHeaders } from "@/lib/security/security-headers";
+import { autoReleasePayment } from "@/lib/services/payment-release";
 
 export async function GET(
   request: NextRequest,
@@ -17,19 +20,22 @@ export async function GET(
     });
 
     if (!serviceRequest) {
-      return NextResponse.json(
+      const response = NextResponse.json(
         { error: "Service request not found" },
         { status: 404 }
       );
+      return addSecurityHeaders(response);
     }
 
-    return NextResponse.json(serviceRequest);
+    const response = NextResponse.json(serviceRequest);
+    return addSecurityHeaders(response);
   } catch (error: any) {
     console.error("Get service request error:", error);
-    return NextResponse.json(
+    const response = NextResponse.json(
       { error: "Failed to fetch service request" },
       { status: 500 }
     );
+    return addSecurityHeaders(response);
   }
 }
 
@@ -184,6 +190,42 @@ export async function PATCH(
           subject: completionEmail.subject,
           html: completionEmail.html,
         });
+
+        // Update trust score when job is completed
+        if (currentRequest.assignedProviderId) {
+          try {
+            await onJobCompleted(id);
+          } catch (error) {
+            console.error("Failed to update trust score on job completion:", error);
+            // Don't fail the request if trust score update fails
+          }
+        }
+
+        // Auto-release payment from escrow
+        try {
+          const payment = await prisma.payment.findFirst({
+            where: {
+              jobId: id,
+              status: 'in_escrow',
+            },
+          });
+          if (payment) {
+            await autoReleasePayment(payment.id);
+          }
+        } catch (error) {
+          console.error("Failed to auto-release payment on job completion:", error);
+          // Don't fail the request if payment release fails
+        }
+      } else if (newStatus === "cancelled") {
+        // Update trust score when job is cancelled
+        if (currentRequest.assignedProviderId) {
+          try {
+            await onJobCancelled(id);
+          } catch (error) {
+            console.error("Failed to update trust score on job cancellation:", error);
+            // Don't fail the request if trust score update fails
+          }
+        }
       } else {
         // Send status update email for all other status changes
         const provider = currentRequest.assignedProviderId
@@ -222,10 +264,11 @@ export async function PATCH(
       },
     });
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       message: "Service request updated",
       request: updated,
     });
+    return addSecurityHeaders(response);
   } catch (error: any) {
     console.error("Update service request error:", error);
     console.error("Error details:", {

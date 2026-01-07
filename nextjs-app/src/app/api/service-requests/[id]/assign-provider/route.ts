@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { sendEmail, generateEmailTemplates } from '@/lib/email'
+import { sanitizeEmail, sanitizeNumber, validateEmail } from '@/lib/security/validation'
+import { addSecurityHeaders } from '@/lib/security/security-headers'
+import { logAuditEvent, getClientIp } from '@/lib/security/audit-log'
 
 /**
  * POST /api/service-requests/[id]/assign-provider
@@ -13,21 +16,49 @@ export async function POST(
 ) {
   try {
     const id = parseInt(params.id)
-    const data = await request.json()
-    const { providerId, adminEmail } = data
-
-    if (!providerId) {
-      return NextResponse.json(
-        { error: 'Provider ID is required' },
+    if (isNaN(id)) {
+      const response = NextResponse.json(
+        { error: 'Invalid request ID' },
         { status: 400 }
       )
+      return addSecurityHeaders(response)
     }
 
-    if (!adminEmail) {
-      return NextResponse.json(
-        { error: 'Admin email is required for audit trail' },
+    const data = await request.json()
+    let { providerId, adminEmail } = data
+
+    // Sanitize inputs
+    adminEmail = sanitizeEmail(adminEmail)
+    providerId = sanitizeNumber(providerId)
+
+    if (!providerId || providerId <= 0) {
+      const response = NextResponse.json(
+        { error: 'Valid provider ID is required' },
         { status: 400 }
       )
+      return addSecurityHeaders(response)
+    }
+
+    if (!adminEmail || !validateEmail(adminEmail)) {
+      const response = NextResponse.json(
+        { error: 'Valid admin email is required for audit trail' },
+        { status: 400 }
+      )
+      return addSecurityHeaders(response)
+    }
+
+    // Verify admin user exists and has admin role
+    const adminUser = await prisma.user.findUnique({
+      where: { email: adminEmail },
+      select: { id: true, role: true },
+    })
+
+    if (!adminUser || adminUser.role !== 'admin') {
+      const response = NextResponse.json(
+        { error: 'Unauthorized: Admin access required' },
+        { status: 403 }
+      )
+      return addSecurityHeaders(response)
     }
 
     // Get the service request
@@ -96,6 +127,23 @@ export async function POST(
       providerName: provider.name,
       timestamp: new Date().toISOString(),
       details: `Admin ${adminEmail} assigned provider ${provider.name} to booking`,
+    })
+
+    // Log audit event
+    await logAuditEvent({
+      action: 'provider_assigned',
+      userId: adminUser.id,
+      userEmail: adminEmail,
+      userRole: 'admin',
+      resourceType: 'service_request',
+      resourceId: id,
+      details: {
+        providerId: providerId,
+        providerName: provider.name,
+        providerEmail: provider.email,
+      },
+      timestamp: new Date(),
+      ipAddress: getClientIp(request),
     })
 
     // Update the service request - assign provider and change status to ASSIGNED
@@ -182,17 +230,19 @@ export async function POST(
       // Don't fail the request if email fails
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       message: 'Provider assigned successfully',
       request: updated,
       notifiedProviders: allInterestedProviderIds.length,
     })
+    return addSecurityHeaders(response)
   } catch (error: any) {
     console.error('Assign provider error:', error)
-    return NextResponse.json(
+    const response = NextResponse.json(
       { error: error.message || 'Failed to assign provider' },
       { status: 500 }
     )
+    return addSecurityHeaders(response)
   }
 }
 
@@ -206,22 +256,50 @@ export async function DELETE(
 ) {
   try {
     const id = parseInt(params.id)
-    const searchParams = request.nextUrl.searchParams
-    const providerId = searchParams.get('providerId')
-    const adminEmail = searchParams.get('adminEmail')
-
-    if (!providerId) {
-      return NextResponse.json(
-        { error: 'Provider ID is required' },
+    if (isNaN(id)) {
+      const response = NextResponse.json(
+        { error: 'Invalid request ID' },
         { status: 400 }
       )
+      return addSecurityHeaders(response)
     }
 
-    if (!adminEmail) {
-      return NextResponse.json(
-        { error: 'Admin email is required for audit trail' },
+    const searchParams = request.nextUrl.searchParams
+    let providerId = searchParams.get('providerId')
+    let adminEmail = searchParams.get('adminEmail')
+
+    // Sanitize inputs
+    adminEmail = adminEmail ? sanitizeEmail(adminEmail) : null
+    providerId = providerId ? sanitizeNumber(providerId).toString() : null
+
+    if (!providerId || parseInt(providerId) <= 0) {
+      const response = NextResponse.json(
+        { error: 'Valid provider ID is required' },
         { status: 400 }
       )
+      return addSecurityHeaders(response)
+    }
+
+    if (!adminEmail || !validateEmail(adminEmail)) {
+      const response = NextResponse.json(
+        { error: 'Valid admin email is required for audit trail' },
+        { status: 400 }
+      )
+      return addSecurityHeaders(response)
+    }
+
+    // Verify admin user exists and has admin role
+    const adminUser = await prisma.user.findUnique({
+      where: { email: adminEmail },
+      select: { id: true, role: true },
+    })
+
+    if (!adminUser || adminUser.role !== 'admin') {
+      const response = NextResponse.json(
+        { error: 'Unauthorized: Admin access required' },
+        { status: 403 }
+      )
+      return addSecurityHeaders(response)
     }
 
     const serviceRequest = await prisma.serviceRequest.findUnique({
@@ -283,6 +361,21 @@ export async function DELETE(
       details: `Admin ${adminEmail} removed provider from interested list`,
     })
 
+    // Log audit event
+    await logAuditEvent({
+      action: 'provider_rejected',
+      userId: adminUser.id,
+      userEmail: adminEmail,
+      userRole: 'admin',
+      resourceType: 'service_request',
+      resourceId: id,
+      details: {
+        providerId: providerIdNum,
+      },
+      timestamp: new Date(),
+      ipAddress: getClientIp(request),
+    })
+
     // Update the service request
     const updated = await prisma.serviceRequest.update({
       where: { requestId: id },
@@ -297,17 +390,19 @@ export async function DELETE(
       },
     })
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       message: 'Provider removed from interested list',
       request: updated,
       remainingInterested: interestedProviders.length,
     })
+    return addSecurityHeaders(response)
   } catch (error: any) {
     console.error('Reject provider error:', error)
-    return NextResponse.json(
+    const response = NextResponse.json(
       { error: error.message || 'Failed to reject provider' },
       { status: 500 }
     )
+    return addSecurityHeaders(response)
   }
 }
 

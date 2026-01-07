@@ -4,6 +4,7 @@ import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
 import { authApi } from "@/lib/api";
+import { setAccessToken, setUser } from "@/lib/auth-jwt";
 import Link from "next/link";
 import { Logo } from "@/components/Logo";
 
@@ -31,8 +32,18 @@ function LoginContent() {
     mutationFn: authApi.login,
     onSuccess: (data) => {
       console.log("Login success, user data:", data.user);
-      // Store user data
-      localStorage.setItem("user", JSON.stringify(data.user));
+      
+      // Store JWT access token
+      if (data.accessToken) {
+        setAccessToken(data.accessToken);
+      }
+      
+      // Store user data (backward compatible)
+      if (data.user) {
+        setUser(data.user);
+        // Also store in old format for backward compatibility
+        localStorage.setItem("user", JSON.stringify(data.user));
+      }
 
       // Trigger storage event to update navigation
       window.dispatchEvent(new Event("storage"));
@@ -69,8 +80,19 @@ function LoginContent() {
     mutationFn: authApi.signup,
     onSuccess: (data) => {
       console.log("Provider signup success:", data);
-      // Store user data
-      localStorage.setItem("user", JSON.stringify(data.user));
+      
+      // Store JWT access token if provided (for consistency with login)
+      if (data.accessToken) {
+        setAccessToken(data.accessToken);
+      }
+      
+      // Store user data (backward compatible)
+      if (data.user) {
+        setUser(data.user);
+        // Also store in old format for backward compatibility
+        localStorage.setItem("user", JSON.stringify(data.user));
+      }
+      
       // Trigger storage event to update navigation
       window.dispatchEvent(new Event("storage"));
       // Redirect to provider dashboard

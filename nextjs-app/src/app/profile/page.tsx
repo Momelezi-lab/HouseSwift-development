@@ -2,13 +2,22 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { useQuery } from '@tanstack/react-query'
-import { serviceRequestApi, complaintApi } from '@/lib/api'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { serviceRequestApi, complaintApi, reviewApi, trustScoreApi } from '@/lib/api'
 import { formatCurrency } from '@/lib/utils'
 
 export default function ProfilePage() {
   const [user, setUser] = useState<any>(null)
   const [activeTab, setActiveTab] = useState<'bookings' | 'complaints'>('bookings')
+  const [selectedBookingForReview, setSelectedBookingForReview] = useState<any>(null)
+  const [reviewForm, setReviewForm] = useState({
+    rating: 5,
+    comment: '',
+    reliabilityScore: 80,
+    qualityScore: 80,
+    communicationScore: 80,
+  })
+  const queryClient = useQueryClient()
 
   useEffect(() => {
     const userData = localStorage.getItem('user')
@@ -42,6 +51,51 @@ export default function ProfilePage() {
       }
     },
     enabled: !!user?.email,
+  })
+
+  // Fetch reviews for completed bookings
+  const { data: reviews } = useQuery({
+    queryKey: ['customer-reviews', user?.email],
+    queryFn: async () => {
+      if (!user?.email) return []
+      const customer = await fetch(`/api/customers?email=${user.email}`).then(r => r.json()).catch(() => null)
+      if (!customer?.[0]?.customerId) return []
+      return await reviewApi.getAll({ customerId: customer[0].customerId })
+    },
+    enabled: !!user?.email,
+  })
+
+  // Confirm completion mutation
+  const confirmCompletionMutation = useMutation({
+    mutationFn: (requestId: number) => serviceRequestApi.confirmCompletion(requestId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['customer-bookings'] })
+      alert('Completion confirmed successfully!')
+    },
+    onError: (error: any) => {
+      alert(error.message || 'Failed to confirm completion')
+    },
+  })
+
+  // Create review mutation
+  const createReviewMutation = useMutation({
+    mutationFn: reviewApi.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['customer-reviews'] })
+      queryClient.invalidateQueries({ queryKey: ['customer-bookings'] })
+      setSelectedBookingForReview(null)
+      setReviewForm({
+        rating: 5,
+        comment: '',
+        reliabilityScore: 80,
+        qualityScore: 80,
+        communicationScore: 80,
+      })
+      alert('Review submitted successfully!')
+    },
+    onError: (error: any) => {
+      alert(error.response?.data?.error || 'Failed to submit review')
+    },
   })
 
   // Fetch customer's complaints
@@ -232,6 +286,63 @@ export default function ProfilePage() {
                               {booking.providerPhone && (
                                 <p className="text-sm text-gray-600">{booking.providerPhone}</p>
                               )}
+                              {booking.providerEmail && booking.assignedProviderId && (
+                                <ProviderTrustScore providerId={booking.assignedProviderId} />
+                              )}
+                            </div>
+                          )}
+
+                          {/* Completion Confirmation & Review Section */}
+                          {booking.assignedProviderId && (booking.status === 'assigned' || booking.status === 'confirmed' || booking.status === 'in_progress' || booking.status === 'completed' || booking.customerConfirmedCompletion) && (
+                            <div className="mt-4 pt-4 border-t border-gray-200 space-y-3">
+                              {/* Completion Confirmation */}
+                              {(!booking.customerConfirmedCompletion && booking.status !== 'completed') && (
+                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                  <p className="text-sm text-blue-800 font-semibold mb-2">Confirm Job Completion</p>
+                                  <p className="text-xs text-blue-600 mb-3">Let us know when the service has been completed.</p>
+                                  <button
+                                    onClick={() => {
+                                      if (confirm('Confirm that this job has been completed?')) {
+                                        confirmCompletionMutation.mutate(booking.requestId)
+                                      }
+                                    }}
+                                    disabled={confirmCompletionMutation.isPending}
+                                    className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white font-semibold py-2 px-4 rounded-lg transition-all"
+                                  >
+                                    {confirmCompletionMutation.isPending ? 'Confirming...' : '✓ Confirm Completion'}
+                                  </button>
+                                </div>
+                              )}
+
+                              {booking.customerConfirmedCompletion && (
+                                <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                                  <p className="text-sm text-green-800 font-semibold">✓ You confirmed completion</p>
+                                  {booking.providerConfirmedCompletion ? (
+                                    <p className="text-xs text-green-600 mt-1">Both parties confirmed - Job completed!</p>
+                                  ) : (
+                                    <p className="text-xs text-green-600 mt-1">Waiting for provider confirmation</p>
+                                  )}
+                                </div>
+                              )}
+
+                              {/* Review Button - Available when at least one party confirmed */}
+                              {(booking.customerConfirmedCompletion || booking.providerConfirmedCompletion || booking.status === 'completed') && (
+                                <div>
+                                  {reviews?.some((r: any) => r.jobId === booking.requestId && r.reviewedBy === 'customer') ? (
+                                    <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                                      <p className="text-sm text-green-800 font-semibold">✓ Review Submitted</p>
+                                      <p className="text-xs text-green-600 mt-1">Thank you for your feedback!</p>
+                                    </div>
+                                  ) : (
+                                    <button
+                                      onClick={() => setSelectedBookingForReview(booking)}
+                                      className="w-full bg-[#2563EB] hover:bg-[#1E40AF] text-white font-semibold py-2 px-4 rounded-lg transition-all"
+                                    >
+                                      Rate Provider
+                                    </button>
+                                  )}
+                                </div>
+                              )}
                             </div>
                           )}
 
@@ -347,6 +458,202 @@ export default function ProfilePage() {
           )}
         </div>
       </main>
+
+      {/* Review Modal */}
+      {selectedBookingForReview && (
+        <ReviewModal
+          booking={selectedBookingForReview}
+          reviewForm={reviewForm}
+          setReviewForm={setReviewForm}
+          onSubmit={(data) => {
+            createReviewMutation.mutate({
+              jobId: selectedBookingForReview.requestId,
+              reviewedBy: 'customer',
+              ...data,
+            })
+          }}
+          onClose={() => setSelectedBookingForReview(null)}
+        />
+      )}
+    </div>
+  )
+}
+
+// Provider Trust Score Component
+function ProviderTrustScore({ providerId }: { providerId: number }) {
+  const { data: trustScore, isLoading } = useQuery({
+    queryKey: ['trust-score', providerId],
+    queryFn: () => trustScoreApi.getByProviderId(providerId),
+    enabled: !!providerId,
+  })
+
+  if (isLoading || !trustScore) return null
+
+  const score = Math.round(trustScore.trustScore || 0)
+  const getScoreColor = (score: number) => {
+    if (score >= 80) return 'text-green-600'
+    if (score >= 60) return 'text-yellow-600'
+    return 'text-red-600'
+  }
+
+  return (
+    <div className="mt-2 p-2 bg-gray-50 rounded-lg">
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-gray-600">Trust Score:</span>
+        <span className={`text-sm font-bold ${getScoreColor(score)}`}>{score}/100</span>
+        <div className="flex-1 bg-gray-200 rounded-full h-1.5">
+          <div
+            className={`h-1.5 rounded-full ${
+              score >= 80 ? 'bg-green-500' : score >= 60 ? 'bg-yellow-500' : 'bg-red-500'
+            }`}
+            style={{ width: `${score}%` }}
+          ></div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Review Modal Component
+function ReviewModal({
+  booking,
+  reviewForm,
+  setReviewForm,
+  onSubmit,
+  onClose,
+}: {
+  booking: any
+  reviewForm: any
+  setReviewForm: (form: any) => void
+  onSubmit: (data: any) => void
+  onClose: () => void
+}) {
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="p-6 border-b border-gray-200">
+          <div className="flex justify-between items-center">
+            <h2 className="text-2xl font-bold text-gray-900">Review Service</h2>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600 text-2xl"
+            >
+              ×
+            </button>
+          </div>
+          <p className="text-gray-600 mt-2">Request #{booking.requestId} - {booking.providerName}</p>
+        </div>
+
+        <form
+          onSubmit={(e) => {
+            e.preventDefault()
+            onSubmit(reviewForm)
+          }}
+          className="p-6 space-y-6"
+        >
+          {/* Rating */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Overall Rating *
+            </label>
+            <div className="flex gap-2">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <button
+                  key={star}
+                  type="button"
+                  onClick={() => setReviewForm({ ...reviewForm, rating: star })}
+                  className={`text-3xl ${
+                    star <= reviewForm.rating ? 'text-yellow-400' : 'text-gray-300'
+                  }`}
+                >
+                  ★
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-gray-500 mt-1">Selected: {reviewForm.rating} out of 5</p>
+          </div>
+
+          {/* Detailed Scores */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Reliability (0-100)
+              </label>
+              <input
+                type="number"
+                min="0"
+                max="100"
+                value={reviewForm.reliabilityScore}
+                onChange={(e) =>
+                  setReviewForm({ ...reviewForm, reliabilityScore: parseInt(e.target.value) || 0 })
+                }
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Quality (0-100)
+              </label>
+              <input
+                type="number"
+                min="0"
+                max="100"
+                value={reviewForm.qualityScore}
+                onChange={(e) =>
+                  setReviewForm({ ...reviewForm, qualityScore: parseInt(e.target.value) || 0 })
+                }
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Communication (0-100)
+              </label>
+              <input
+                type="number"
+                min="0"
+                max="100"
+                value={reviewForm.communicationScore}
+                onChange={(e) =>
+                  setReviewForm({ ...reviewForm, communicationScore: parseInt(e.target.value) || 0 })
+                }
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+              />
+            </div>
+          </div>
+
+          {/* Comment */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Comment (Optional)
+            </label>
+            <textarea
+              value={reviewForm.comment}
+              onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })}
+              rows={4}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+              placeholder="Share your experience..."
+            />
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-4 pt-4 border-t border-gray-200">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="flex-1 px-4 py-2 bg-[#2563EB] text-white rounded-lg hover:bg-[#1E40AF] font-semibold"
+            >
+              Submit Review
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   )
 }

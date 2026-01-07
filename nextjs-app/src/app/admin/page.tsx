@@ -8,6 +8,9 @@ import {
   providerApi,
   complaintApi,
   userApi,
+  trustScoreApi,
+  auditLogApi,
+  fraudMonitoringApi,
 } from "@/lib/api";
 import { formatCurrency } from "@/lib/utils";
 import { isAdmin, isAuthenticated, logout } from "@/lib/auth";
@@ -160,6 +163,7 @@ export default function AdminDashboard() {
     { id: "providers", label: "Providers", icon: "👥" },
     { id: "users", label: "Users", icon: "👤" },
     { id: "financial", label: "Financial", icon: "💰" },
+    { id: "fraud", label: "Fraud Monitoring", icon: "🚨" },
   ];
 
   return (
@@ -222,6 +226,7 @@ export default function AdminDashboard() {
         {activeSection === "financial" && (
           <FinancialView stats={stats} requests={requests || []} />
         )}
+        {activeSection === "fraud" && <FraudMonitoringView />}
 
         {/* Request Details Modal */}
         {selectedRequest && (
@@ -668,6 +673,10 @@ function ProvidersView({ providers }: { providers: any[] }) {
 function UsersView({ users, isLoading }: { users: any[]; isLoading: boolean }) {
   const [roleFilter, setRoleFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [showPasswordReset, setShowPasswordReset] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [selectedUserIdForHistory, setSelectedUserIdForHistory] = useState<number | null>(null);
   const queryClient = useQueryClient();
 
   const filteredUsers = users.filter((user: any) => {
@@ -710,6 +719,48 @@ function UsersView({ users, isLoading }: { users: any[]; isLoading: boolean }) {
       alert(error.message || "Failed to delete user");
     }
   };
+
+  const handleResetPassword = async () => {
+    if (!selectedUser || !newPassword) {
+      alert("Please enter a new password");
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      alert("Password must be at least 6 characters long");
+      return;
+    }
+
+    if (
+      !confirm(
+        `Are you sure you want to reset the password for "${selectedUser.name}"?`
+      )
+    ) {
+      return;
+    }
+
+    try {
+      await userApi.resetPassword(selectedUser.id, newPassword);
+      alert("Password reset successfully");
+      setShowPasswordReset(false);
+      setNewPassword("");
+      setSelectedUser(null);
+    } catch (error: any) {
+      alert(error.message || "Failed to reset password");
+    }
+  };
+
+  // Fetch audit logs for selected user
+  const { data: userAuditLogs } = useQuery({
+    queryKey: ["audit-logs", selectedUserIdForHistory],
+    queryFn: () =>
+      auditLogApi.getAll({
+        userId: selectedUserIdForHistory || undefined,
+        resourceType: "user",
+        limit: 50,
+      }),
+    enabled: !!selectedUserIdForHistory,
+  });
 
   if (isLoading) {
     return (
@@ -839,12 +890,22 @@ function UsersView({ users, isLoading }: { users: any[]; isLoading: boolean }) {
                     <div className="flex gap-2">
                       <button
                         onClick={() => {
-                          // TODO: Implement edit user functionality
-                          alert("Edit user functionality coming soon");
+                          setSelectedUser(user);
+                          setShowPasswordReset(true);
                         }}
-                        className="px-3 py-1 bg-[#2563EB] text-white rounded-lg hover:bg-[#2563EB]/90 text-sm font-semibold"
+                        className="px-3 py-1 bg-orange-600 text-white rounded-lg hover:bg-orange-700 text-sm font-semibold"
+                        title="Reset Password"
                       >
-                        Edit
+                        🔑 Reset
+                      </button>
+                      <button
+                        onClick={() => {
+                          setSelectedUserIdForHistory(user.id);
+                        }}
+                        className="px-3 py-1 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm font-semibold"
+                        title="View History"
+                      >
+                        📜 History
                       </button>
                       {user.role !== "admin" && (
                         <button
@@ -866,6 +927,228 @@ function UsersView({ users, isLoading }: { users: any[]; isLoading: boolean }) {
             <p className="text-gray-600">No users found</p>
           </div>
         )}
+      </div>
+
+      {/* Password Reset Modal */}
+      {showPasswordReset && selectedUser && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">
+              Reset Password for {selectedUser.name}
+            </h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  New Password
+                </label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="w-full px-4 py-2 border border-[#D1D5DB] rounded-lg focus:ring-2 focus:ring-[#2563EB] focus:border-[#2563EB]"
+                  placeholder="Enter new password (min 6 characters)"
+                />
+              </div>
+              <div className="flex gap-4">
+                <button
+                  onClick={handleResetPassword}
+                  className="flex-1 px-4 py-2 bg-[#2563EB] text-white rounded-lg hover:bg-[#2563EB]/90 font-semibold"
+                >
+                  Reset Password
+                </button>
+                <button
+                  onClick={() => {
+                    setShowPasswordReset(false);
+                    setNewPassword("");
+                    setSelectedUser(null);
+                  }}
+                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-semibold"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Change History Modal */}
+      {selectedUserIdForHistory && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-auto">
+            <div className="sticky top-0 bg-[#2563EB] text-white p-6 flex items-center justify-between">
+              <h2 className="text-2xl font-bold">Change History</h2>
+              <button
+                onClick={() => setSelectedUserIdForHistory(null)}
+                className="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-xl font-bold transition-colors"
+              >
+                ×
+              </button>
+            </div>
+            <div className="p-6">
+              {userAuditLogs?.logs && userAuditLogs.logs.length > 0 ? (
+                <div className="space-y-4">
+                  {userAuditLogs.logs.map((log: any) => (
+                    <div
+                      key={log.id}
+                      className="border border-gray-200 rounded-lg p-4"
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <p className="font-semibold text-gray-900">
+                            {log.action}
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            {log.userEmail} ({log.userRole})
+                          </p>
+                        </div>
+                        <p className="text-sm text-gray-500">
+                          {new Date(log.createdAt).toLocaleString()}
+                        </p>
+                      </div>
+                      {log.details && (
+                        <div className="mt-2 p-2 bg-gray-50 rounded text-sm">
+                          <pre className="whitespace-pre-wrap text-gray-700">
+                            {JSON.stringify(JSON.parse(log.details), null, 2)}
+                          </pre>
+                        </div>
+                      )}
+                      {log.ipAddress && (
+                        <p className="text-xs text-gray-500 mt-1">
+                          IP: {log.ipAddress}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-600 text-center py-8">
+                  No change history found for this user
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function FraudMonitoringView() {
+  const { data: fraudData, isLoading } = useQuery({
+    queryKey: ["fraud-alerts"],
+    queryFn: () => fraudMonitoringApi.getAlerts(),
+  });
+
+  const alerts = fraudData?.alerts || [];
+  const getSeverityColor = (severity: string) => {
+    switch (severity) {
+      case "high":
+        return "bg-red-100 text-red-800 border-red-200";
+      case "medium":
+        return "bg-orange-100 text-orange-800 border-orange-200";
+      case "low":
+        return "bg-yellow-100 text-yellow-800 border-yellow-200";
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-200";
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="text-center py-12">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2563EB] mx-auto mb-4"></div>
+        <p className="text-gray-600">Loading fraud alerts...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-4xl font-bold text-gray-900 mb-2">
+          Fraud Monitoring
+        </h1>
+        <p className="text-gray-600">
+          Monitor suspicious patterns and potential fraud
+        </p>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="bg-white rounded-xl shadow-lg p-4 border border-gray-200">
+          <p className="text-gray-600 text-sm mb-1">Total Alerts</p>
+          <p className="text-2xl font-bold text-gray-900">
+            {fraudData?.total || 0}
+          </p>
+        </div>
+        <div className="bg-white rounded-xl shadow-lg p-4 border border-red-200">
+          <p className="text-red-600 text-sm mb-1">High Severity</p>
+          <p className="text-2xl font-bold text-red-800">
+            {fraudData?.high || 0}
+          </p>
+        </div>
+        <div className="bg-white rounded-xl shadow-lg p-4 border border-orange-200">
+          <p className="text-orange-600 text-sm mb-1">Medium Severity</p>
+          <p className="text-2xl font-bold text-orange-800">
+            {fraudData?.medium || 0}
+          </p>
+        </div>
+        <div className="bg-white rounded-xl shadow-lg p-4 border border-yellow-200">
+          <p className="text-yellow-600 text-sm mb-1">Low Severity</p>
+          <p className="text-2xl font-bold text-yellow-800">
+            {fraudData?.low || 0}
+          </p>
+        </div>
+      </div>
+
+      {/* Alerts List */}
+      <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+        <div className="p-6">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+            Fraud Alerts
+          </h2>
+          {alerts.length > 0 ? (
+            <div className="space-y-4">
+              {alerts.map((alert: any, idx: number) => (
+                <div
+                  key={idx}
+                  className={`border-2 rounded-lg p-4 ${getSeverityColor(
+                    alert.severity
+                  )}`}
+                >
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <h3 className="font-bold text-lg">{alert.title}</h3>
+                      <p className="text-sm mt-1">{alert.description}</p>
+                    </div>
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-bold border-2 ${getSeverityColor(
+                        alert.severity
+                      )}`}
+                    >
+                      {alert.severity.toUpperCase()}
+                    </span>
+                  </div>
+                  {alert.details && (
+                    <div className="mt-3 p-3 bg-white/50 rounded text-sm">
+                      <pre className="whitespace-pre-wrap">
+                        {JSON.stringify(alert.details, null, 2)}
+                      </pre>
+                    </div>
+                  )}
+                  <p className="text-xs mt-2 opacity-75">
+                    Detected: {new Date(alert.detectedAt).toLocaleString()}
+                  </p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-gray-600">No fraud alerts detected</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -954,6 +1237,109 @@ function FinancialView({ stats, requests }: { stats: any; requests: any[] }) {
             </tbody>
           </table>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// Provider Trust Card Component (for admin dashboard)
+function ProviderTrustCard({
+  provider,
+  onAssign,
+  onReject,
+  isAssigning,
+  isRejecting,
+}: {
+  provider: any;
+  onAssign: () => void;
+  onReject: () => void;
+  isAssigning: boolean;
+  isRejecting: boolean;
+}) {
+  const { data: trustScore, isLoading } = useQuery({
+    queryKey: ['trust-score', provider.providerId],
+    queryFn: () => trustScoreApi.getByProviderId(provider.providerId),
+    enabled: !!provider.providerId,
+  });
+
+  const score = trustScore ? Math.round(trustScore.trustScore || 0) : null;
+  const getScoreColor = (score: number | null) => {
+    if (!score) return 'text-gray-500';
+    if (score >= 80) return 'text-green-600';
+    if (score >= 60) return 'text-yellow-600';
+    return 'text-red-600';
+  };
+
+  return (
+    <div className="bg-white border border-gray-200 rounded-lg p-4 flex items-center justify-between">
+      <div className="flex-1">
+        <div className="flex items-center gap-3 mb-2">
+          <p className="font-bold text-gray-900">{provider.providerName}</p>
+          {provider.providerRating && (
+            <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs font-semibold">
+              ⭐ {provider.providerRating.toFixed(1)}
+            </span>
+          )}
+          {score !== null && (
+            <span
+              className={`px-2 py-1 rounded text-xs font-semibold ${
+                score >= 80
+                  ? 'bg-green-100 text-green-800'
+                  : score >= 60
+                  ? 'bg-yellow-100 text-yellow-800'
+                  : 'bg-red-100 text-red-800'
+              }`}
+            >
+              Trust: {score}/100
+            </span>
+          )}
+        </div>
+        <p className="text-sm text-gray-600">{provider.providerEmail}</p>
+        <p className="text-sm text-gray-600">{provider.providerPhone}</p>
+        {isLoading ? (
+          <p className="text-xs text-gray-500 mt-1">Loading trust score...</p>
+        ) : (
+          trustScore && (
+            <div className="mt-2 flex items-center gap-2">
+              <span className="text-xs text-gray-600">Trust Score:</span>
+              <div className="flex-1 bg-gray-200 rounded-full h-1.5 max-w-[100px]">
+                <div
+                  className={`h-1.5 rounded-full ${
+                    score! >= 80
+                      ? 'bg-green-500'
+                      : score! >= 60
+                      ? 'bg-yellow-500'
+                      : 'bg-red-500'
+                  }`}
+                  style={{ width: `${score}%` }}
+                ></div>
+              </div>
+              <span className={`text-xs font-semibold ${getScoreColor(score)}`}>
+                {score}/100
+              </span>
+            </div>
+          )
+        )}
+        <p className="text-xs text-gray-500 mt-1">
+          Showed interest:{' '}
+          {new Date(provider.acceptedAt).toLocaleString()}
+        </p>
+      </div>
+      <div className="flex gap-2">
+        <button
+          onClick={onAssign}
+          disabled={isAssigning}
+          className="px-4 py-2 bg-[#10B981] text-white rounded-lg font-semibold hover:bg-[#059669] transition-colors disabled:opacity-50"
+        >
+          {isAssigning ? 'Assigning...' : '✓ Confirm'}
+        </button>
+        <button
+          onClick={onReject}
+          disabled={isRejecting}
+          className="px-4 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-colors disabled:opacity-50"
+        >
+          {isRejecting ? 'Removing...' : '✕ Reject'}
+        </button>
       </div>
     </div>
   );
@@ -1158,55 +1544,14 @@ function RequestDetailsModal({
               </h3>
               <div className="space-y-3">
                 {interestedProviders.map((interested: any, idx: number) => (
-                  <div
+                  <ProviderTrustCard
                     key={idx}
-                    className="bg-white border border-gray-200 rounded-lg p-4 flex items-center justify-between"
-                  >
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <p className="font-bold text-gray-900">
-                          {interested.providerName}
-                        </p>
-                        {interested.providerRating && (
-                          <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs font-semibold">
-                            ⭐ {interested.providerRating.toFixed(1)}
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-sm text-gray-600">
-                        {interested.providerEmail}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        {interested.providerPhone}
-                      </p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        Showed interest:{" "}
-                        {new Date(interested.acceptedAt).toLocaleString()}
-                      </p>
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() =>
-                          handleAssignProvider(interested.providerId)
-                        }
-                        disabled={isAssigning}
-                        className="px-4 py-2 bg-[#10B981] text-white rounded-lg font-semibold hover:bg-[#059669] transition-colors disabled:opacity-50"
-                      >
-                        {isAssigning ? "Assigning..." : "✓ Confirm"}
-                      </button>
-                      <button
-                        onClick={() =>
-                          handleRejectProvider(interested.providerId)
-                        }
-                        disabled={isRejecting === interested.providerId}
-                        className="px-4 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-colors disabled:opacity-50"
-                      >
-                        {isRejecting === interested.providerId
-                          ? "Removing..."
-                          : "✕ Reject"}
-                      </button>
-                    </div>
-                  </div>
+                    provider={interested}
+                    onAssign={() => handleAssignProvider(interested.providerId)}
+                    onReject={() => handleRejectProvider(interested.providerId)}
+                    isAssigning={isAssigning}
+                    isRejecting={isRejecting === interested.providerId}
+                  />
                 ))}
               </div>
             </div>

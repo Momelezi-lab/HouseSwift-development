@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useMutation } from '@tanstack/react-query'
 import { authApi } from '@/lib/api'
+import { setAccessToken, setUser } from '@/lib/auth-jwt'
 import Link from 'next/link'
 import { Logo } from '@/components/Logo'
 
@@ -31,8 +32,18 @@ export default function SignupPage() {
   const signupMutation = useMutation({
     mutationFn: authApi.signup,
     onSuccess: (data) => {
-      // Store user data
-      localStorage.setItem('user', JSON.stringify(data.user))
+      // Store JWT access token if provided
+      if (data.accessToken) {
+        setAccessToken(data.accessToken);
+      }
+      
+      // Store user data (backward compatible)
+      if (data.user) {
+        setUser(data.user);
+        // Also store in old format for backward compatibility
+        localStorage.setItem('user', JSON.stringify(data.user))
+      }
+      
       // Trigger storage event to update navigation
       window.dispatchEvent(new Event('storage'))
       // Redirect based on role
@@ -50,8 +61,18 @@ export default function SignupPage() {
   const providerSignupMutation = useMutation({
     mutationFn: authApi.signup,
     onSuccess: (data) => {
-      // Store user data
-      localStorage.setItem('user', JSON.stringify(data.user))
+      // Store JWT access token if provided
+      if (data.accessToken) {
+        setAccessToken(data.accessToken);
+      }
+      
+      // Store user data (backward compatible)
+      if (data.user) {
+        setUser(data.user);
+        // Also store in old format for backward compatibility
+        localStorage.setItem('user', JSON.stringify(data.user))
+      }
+      
       // Trigger storage event to update navigation
       window.dispatchEvent(new Event('storage'))
       // Redirect to provider dashboard

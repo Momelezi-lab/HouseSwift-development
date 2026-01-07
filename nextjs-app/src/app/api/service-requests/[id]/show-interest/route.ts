@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { sanitizeNumber } from '@/lib/security/validation'
+import { addSecurityHeaders } from '@/lib/security/security-headers'
+import { logAuditEvent, getClientIp } from '@/lib/security/audit-log'
 
 /**
  * POST /api/service-requests/[id]/show-interest
@@ -13,14 +16,23 @@ export async function POST(
 ) {
   try {
     const id = parseInt(params.id)
-    const data = await request.json()
-    const { providerId } = data
-
-    if (!providerId) {
-      return NextResponse.json(
-        { error: 'Provider ID is required' },
+    if (isNaN(id)) {
+      const response = NextResponse.json(
+        { error: 'Invalid request ID' },
         { status: 400 }
       )
+      return addSecurityHeaders(response)
+    }
+
+    const data = await request.json()
+    let providerId = sanitizeNumber(data.providerId)
+
+    if (!providerId || providerId <= 0) {
+      const response = NextResponse.json(
+        { error: 'Valid provider ID is required' },
+        { status: 400 }
+      )
+      return addSecurityHeaders(response)
     }
 
     // Get the service request
@@ -132,6 +144,21 @@ export async function POST(
       details: 'Provider showed interest in booking',
     })
 
+    // Log audit event
+    await logAuditEvent({
+      action: 'provider_interest',
+      userEmail: provider.email,
+      userRole: 'provider',
+      resourceType: 'service_request',
+      resourceId: id,
+      details: {
+        providerId: providerId,
+        providerName: provider.name,
+      },
+      timestamp: new Date(),
+      ipAddress: getClientIp(request),
+    })
+
     // Update the service request
     const updated = await prisma.serviceRequest.update({
       where: { requestId: id },
@@ -146,17 +173,19 @@ export async function POST(
       },
     })
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       message: 'Interest submitted successfully. Awaiting admin confirmation.',
       request: updated,
       interestedProviders: interestedProviders.length,
     })
+    return addSecurityHeaders(response)
   } catch (error: any) {
     console.error('Show interest error:', error)
-    return NextResponse.json(
+    const response = NextResponse.json(
       { error: error.message || 'Failed to show interest' },
       { status: 500 }
     )
+    return addSecurityHeaders(response)
   }
 }
 

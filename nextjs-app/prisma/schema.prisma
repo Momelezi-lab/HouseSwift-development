@@ -8,7 +8,7 @@ generator client {
 // Seed configuration
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -22,6 +22,9 @@ model User {
   registered  String
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
+
+  customerProfile CustomerProfile?
+  adminProfile    AdminProfile?
 
   @@map("users")
 }
@@ -81,6 +84,11 @@ model ServiceProvider {
   updatedAt       DateTime @updatedAt @map("updated_at")
 
   serviceRequests ServiceRequest[]
+  trustScore      TrustScore?
+  providerProfile ProviderProfile?
+  reviews         Review[]
+  disputes        Dispute[]
+  payments        Payment[]
 
   @@map("service_providers")
 }
@@ -112,6 +120,9 @@ model Customer {
   createdAt      DateTime @default(now()) @map("created_at")
 
   serviceRequests ServiceRequest[]
+  reviews        Review[]
+  disputes       Dispute[]
+  payments       Payment[]
 
   @@map("customers")
 }
@@ -147,6 +158,8 @@ model ServiceRequest {
   customerPaymentReceived Boolean  @default(false) @map("customer_payment_received")
   providerPaymentMade    Boolean  @default(false) @map("provider_payment_made")
   commissionCollected     Boolean  @default(false) @map("commission_collected")
+  customerConfirmedCompletion Boolean @default(false) @map("customer_confirmed_completion")
+  providerConfirmedCompletion Boolean @default(false) @map("provider_confirmed_completion")
   adminNotes             String?   @map("admin_notes")
   auditLog               String?   @map("audit_log") // JSON array: [{action, userId, timestamp, details}]
   createdAt              DateTime  @default(now()) @map("created_at")
@@ -159,4 +172,181 @@ model ServiceRequest {
   provider  ServiceProvider?  @relation(fields: [assignedProviderId], references: [id])
 
   @@map("service_requests")
+}
+
+// Trust Score Model - Computed signal for providers
+model TrustScore {
+  id                Int       @id @default(autoincrement())
+  providerId        Int       @unique @map("provider_id")
+  reliabilityScore   Float     @default(0.0) @map("reliability_score") // 0-100
+  completionRate     Float     @default(0.0) @map("completion_rate") // 0-1
+  cancellationRate   Float     @default(0.0) @map("cancellation_rate") // 0-1
+  averageRating      Float     @default(0.0) @map("average_rating") // 0-5
+  verificationLevel  Int       @default(0) @map("verification_level") // 0-3
+  trustScore         Float     @default(0.0) @map("trust_score") // 0-100 (computed)
+  totalJobs          Int       @default(0) @map("total_jobs")
+  completedJobs      Int       @default(0) @map("completed_jobs")
+  cancelledJobs      Int       @default(0) @map("cancelled_jobs")
+  totalReviews       Int       @default(0) @map("total_reviews")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+
+  provider ServiceProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  @@map("trust_scores")
+}
+
+// Review Model - Mutual reviews between customers and providers
+model Review {
+  id              Int       @id @default(autoincrement())
+  jobId            Int       @map("job_id") // ServiceRequest.requestId
+  customerId       Int       @map("customer_id")
+  providerId       Int       @map("provider_id")
+  reviewedBy       String    @map("reviewed_by") // "customer" or "provider"
+  reviewedUserId   Int       @map("reviewed_user_id") // ID of the user being reviewed (customer or provider)
+  rating           Int       // 1-5
+  comment          String?
+  reliabilityScore Float?    @map("reliability_score") // 0-100
+  qualityScore     Float?    @map("quality_score") // 0-100
+  communicationScore Float?  @map("communication_score") // 0-100
+  isVerified       Boolean   @default(false) @map("is_verified")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  customer Customer @relation(fields: [customerId], references: [customerId])
+  provider ServiceProvider @relation(fields: [providerId], references: [id])
+
+  @@unique([jobId, reviewedBy]) // One review per job per reviewer (customer or provider)
+  @@map("reviews")
+}
+
+// Dispute Model - Formal disputes between customers and providers
+model Dispute {
+  id                Int       @id @default(autoincrement())
+  jobId              Int       @map("job_id") // ServiceRequest.requestId
+  customerId         Int       @map("customer_id")
+  providerId         Int       @map("provider_id")
+  initiatedBy        String    @map("initiated_by") // "customer" or "provider"
+  reason             String
+  description        String
+  status             String    @default("pending") // pending, in_review, resolved, dismissed
+  resolution         String?
+  resolvedBy         String?   @map("resolved_by") // admin email
+  resolvedAt         DateTime? @map("resolved_at")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+
+  customer Customer @relation(fields: [customerId], references: [customerId])
+  provider ServiceProvider @relation(fields: [providerId], references: [id])
+
+  @@map("disputes")
+}
+
+// Payment Model - Separate payment tracking (escrow system)
+model Payment {
+  id                    Int       @id @default(autoincrement())
+  jobId                 Int       @map("job_id") // ServiceRequest.requestId
+  customerId            Int       @map("customer_id")
+  providerId            Int?      @map("provider_id")
+  amount                Float     // Total amount paid by customer
+  providerPayout        Float?    @map("provider_payout") // Amount to provider
+  commission            Float?    // HomeSwift commission
+  paymentMethod         String    @map("payment_method") // eft, credit_card, etc.
+  status                String    @default("pending") // pending, in_escrow, released, refunded
+  customerPaidAt        DateTime? @map("customer_paid_at")
+  releasedAt            DateTime? @map("released_at")
+  releasedBy            String?   @map("released_by") // admin email or system
+  proofOfPaymentUrl     String?   @map("proof_of_payment_url")
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+
+  customer Customer @relation(fields: [customerId], references: [customerId])
+  provider ServiceProvider? @relation(fields: [providerId], references: [id])
+
+  @@map("payments")
+}
+
+// Service Model - Available services catalog
+model Service {
+  id              Int       @id @default(autoincrement())
+  name            String    @unique
+  category        String    // e.g., "cleaning", "maintenance", "repair"
+  description     String?
+  isActive        Boolean   @default(true) @map("is_active")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  @@map("services")
+}
+
+// Customer Profile Model - Extended customer information
+model CustomerProfile {
+  id              Int       @id @default(autoincrement())
+  userId          Int       @unique @map("user_id")
+  address         String?
+  city            String?
+  postalCode      String?   @map("postal_code")
+  preferredContactMethod String? @map("preferred_contact_method")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("customer_profiles")
+}
+
+// Provider Profile Model - Extended provider information
+model ProviderProfile {
+  id              Int       @id @default(autoincrement())
+  providerId      Int       @unique @map("provider_id")
+  bankName        String?   @map("bank_name")
+  bankAccountNumber String? @map("bank_account_number")
+  bankAccountType String?   @map("bank_account_type")
+  idNumber        String?   @map("id_number")
+  taxNumber       String?   @map("tax_number")
+  businessRegistration String? @map("business_registration")
+  verificationStatus String  @default("pending") @map("verification_status") // pending, verified, rejected
+  verifiedAt      DateTime? @map("verified_at")
+  verifiedBy      String?   @map("verified_by") // admin email
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  provider ServiceProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  @@map("provider_profiles")
+}
+
+// Admin Profile Model - Extended admin information
+model AdminProfile {
+  id              Int       @id @default(autoincrement())
+  userId          Int       @unique @map("user_id")
+  department      String?
+  permissions     String? // JSON array of permissions
+  lastLoginAt     DateTime? @map("last_login_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("admin_profiles")
+}
+
+// Audit Log Model - Centralized audit logging
+model AuditLog {
+  id              Int       @id @default(autoincrement())
+  action          String    // e.g., "user_login", "job_created", "provider_assigned"
+  userId          Int?      @map("user_id")
+  userEmail       String?   @map("user_email")
+  userRole        String?   @map("user_role")
+  resourceType    String    @map("resource_type") // e.g., "user", "job", "payment"
+  resourceId      Int?      @map("resource_id")
+  details         String? // JSON string
+  ipAddress       String?   @map("ip_address")
+  userAgent       String?   @map("user_agent")
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([resourceType, resourceId])
+  @@index([createdAt])
+  @@map("audit_logs")
 }

@@ -119,7 +119,7 @@ function BookingSuccessContent() {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center px-4">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1A531A] mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2563EB] mx-auto mb-4"></div>
           <p className="text-gray-600">Loading booking details...</p>
         </div>
       </div>
@@ -130,9 +130,9 @@ function BookingSuccessContent() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-12 px-4">
       <div className="max-w-4xl mx-auto">
         {/* Success Message */}
-        <div className="bg-white rounded-3xl shadow-2xl p-10 text-center border-2 border-[#90B890] mb-8">
+        <div className="bg-white rounded-3xl shadow-2xl p-10 text-center border-2 border-[#2563EB]/20 mb-8">
           <div className="mb-8 animate-fade-in">
-            <div className="mx-auto w-24 h-24 bg-[#1A531A] rounded-full flex items-center justify-center mb-6 shadow-xl animate-pulse-glow">
+            <div className="mx-auto w-24 h-24 bg-[#2563EB] rounded-full flex items-center justify-center mb-6 shadow-xl animate-pulse-glow">
               <svg
                 className="w-12 h-12 text-white"
                 fill="none"
@@ -147,7 +147,7 @@ function BookingSuccessContent() {
                 />
               </svg>
             </div>
-            <h1 className="text-5xl font-extrabold text-[#1A531A] mb-4">
+            <h1 className="text-5xl font-extrabold text-[#2563EB] mb-4">
               Booking Request Received! 🎉
             </h1>
             <p className="text-xl text-gray-700 font-medium">
@@ -156,11 +156,11 @@ function BookingSuccessContent() {
             </p>
           </div>
 
-          <div className="bg-[#90B890]/10 rounded-2xl p-8 mb-8 border-2 border-[#90B890]">
+          <div className="bg-blue-50 rounded-2xl p-8 mb-8 border-2 border-blue-200">
             <div className="space-y-4">
-              <div className="flex justify-between items-center py-2 border-b border-[#90B890]">
+              <div className="flex justify-between items-center py-2 border-b border-blue-200">
                 <span className="text-gray-700 font-semibold">Request ID:</span>
-                <span className="font-extrabold text-[#1A531A] text-xl">
+                <span className="font-extrabold text-[#2563EB] text-xl">
                   #{requestId}
                 </span>
               </div>
@@ -170,11 +170,11 @@ function BookingSuccessContent() {
                     <span className="text-gray-700 font-semibold">
                       Total Amount:
                     </span>
-                    <span className="font-extrabold text-[#1A531A] text-2xl">
+                    <span className="font-extrabold text-[#2563EB] text-2xl">
                       {formatCurrency(totalAmount)}
                     </span>
                   </div>
-                  <div className="flex justify-between items-center py-2 border-t-2 border-[#90B890] pt-4">
+                  <div className="flex justify-between items-center py-2 border-t-2 border-blue-200 pt-4">
                     <span className="text-gray-700 font-semibold">
                       Deposit Required (50%):
                     </span>
@@ -286,7 +286,7 @@ function BookingSuccessContent() {
                       (Max 5MB)
                     </p>
                     {proofFile && (
-                      <p className="text-sm text-green-600 mt-2 font-semibold">
+                      <p className="text-sm text-blue-600 mt-2 font-semibold">
                         ✓ File selected: {proofFile.name}
                       </p>
                     )}
@@ -296,7 +296,7 @@ function BookingSuccessContent() {
 
               {/* Credit Card Payment Info */}
               {paymentMethod === "credit_card" && (
-                <div className="bg-green-50 border-2 border-green-200 rounded-xl p-6">
+                <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-6">
                   <h3 className="font-bold text-lg text-[#111827] mb-2">
                     Credit Card Payment
                   </h3>
@@ -333,8 +333,8 @@ function BookingSuccessContent() {
             </form>
           </div>
         ) : (
-          <div className="bg-green-50 border-2 border-green-200 rounded-3xl shadow-2xl p-10 text-center">
-            <div className="mx-auto w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mb-6">
+          <div className="bg-blue-50 border-2 border-blue-200 rounded-3xl shadow-2xl p-10 text-center">
+            <div className="mx-auto w-20 h-20 bg-[#2563EB] rounded-full flex items-center justify-center mb-6">
               <svg
                 className="w-10 h-10 text-white"
                 fill="none"
@@ -349,7 +349,7 @@ function BookingSuccessContent() {
                 />
               </svg>
             </div>
-            <h2 className="text-3xl font-bold text-green-700 mb-4">
+            <h2 className="text-3xl font-bold text-[#2563EB] mb-4">
               Payment Submitted!
             </h2>
             <p className="text-lg text-gray-700 mb-2">
@@ -374,13 +374,13 @@ function BookingSuccessContent() {
         <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
           <Link
             href="/"
-            className="bg-[#1A531A] hover:bg-[#1A531A]/90 text-white font-bold py-4 px-8 rounded-xl shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all text-center"
+            className="bg-[#2563EB] hover:bg-[#1E40AF] text-white font-bold py-4 px-8 rounded-xl shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all text-center"
           >
             🏠 Back to Home
           </Link>
           <Link
             href="/profile"
-            className="bg-white border-2 border-[#1A531A] text-[#1A531A] hover:bg-[#90B890]/10 font-bold py-4 px-8 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all text-center"
+            className="bg-white border-2 border-[#2563EB] text-[#2563EB] hover:bg-blue-50 font-bold py-4 px-8 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all text-center"
           >
             📋 View My Bookings
           </Link>

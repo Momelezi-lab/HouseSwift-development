@@ -2,51 +2,110 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendEmail, generateEmailTemplates } from "@/lib/email";
 import { Decimal } from "@prisma/client/runtime/library";
+import { sanitizeString, sanitizeEmail, sanitizePhone, validateEmail, validatePhone, validateDate, validateTime, validateQuantity } from "@/lib/security/validation";
+import { addSecurityHeaders } from "@/lib/security/security-headers";
+import { logAuditEvent, getClientIp } from "@/lib/security/audit-log";
+import { rateLimit, getClientIdentifier } from "@/lib/security/rate-limit";
 
 const CALLOUT_FEE = 100.0; // R100 callout fee
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting: 10 requests per hour per IP
+    const clientId = getClientIdentifier(request);
+    const rateLimitResult = rateLimit(clientId, {
+      maxRequests: 10,
+      windowMs: 60 * 60 * 1000, // 1 hour
+    });
+
+    if (!rateLimitResult.allowed) {
+      const response = NextResponse.json(
+        {
+          error: "Too many booking requests. Please try again later.",
+          retryAfter: Math.ceil((rateLimitResult.resetTime - Date.now()) / 1000),
+        },
+        { status: 429 }
+      );
+      addSecurityHeaders(response);
+      return response;
+    }
+
     const data = await request.json();
+
+    // Sanitize and validate required fields
+    const customerName = sanitizeString(data.customer_name);
+    const customerEmail = sanitizeEmail(data.customer_email);
+    const customerPhone = sanitizePhone(data.customer_phone);
+    const customerAddress = sanitizeString(data.customer_address);
+    const unitNumber = data.unit_number ? sanitizeString(data.unit_number) : undefined;
+    const complexName = data.complex_name ? sanitizeString(data.complex_name) : undefined;
+    const accessInstructions = data.access_instructions ? sanitizeString(data.access_instructions) : undefined;
+    const additionalNotes = data.additional_notes ? sanitizeString(data.additional_notes) : undefined;
 
     // Validate required fields
     const requiredFields = [
-      "customer_name",
-      "customer_email",
-      "customer_phone",
-      "customer_address",
-      "preferred_date",
-      "preferred_time",
-      "items",
+      { field: "customer_name", value: customerName },
+      { field: "customer_email", value: customerEmail },
+      { field: "customer_phone", value: customerPhone },
+      { field: "customer_address", value: customerAddress },
+      { field: "preferred_date", value: data.preferred_date },
+      { field: "preferred_time", value: data.preferred_time },
+      { field: "items", value: data.items },
     ];
-    for (const field of requiredFields) {
-      if (!data[field]) {
-        return NextResponse.json(
+    
+    for (const { field, value } of requiredFields) {
+      if (!value || (Array.isArray(value) && value.length === 0)) {
+        const response = NextResponse.json(
           { error: `Missing required field: ${field}` },
           { status: 400 }
         );
+        return addSecurityHeaders(response);
       }
     }
 
-    // Validate phone (10 digits for South Africa)
-    const phone = data.customer_phone
+    // Validate email format
+    if (!validateEmail(customerEmail)) {
+      const response = NextResponse.json(
+        { error: "Invalid email format" },
+        { status: 400 }
+      );
+      return addSecurityHeaders(response);
+    }
+
+    // Validate phone
+    if (!validatePhone(customerPhone)) {
+      const response = NextResponse.json(
+        { error: "Invalid phone number format. Use South African format (e.g., 0123456789 or +27123456789)" },
+        { status: 400 }
+      );
+      return addSecurityHeaders(response);
+    }
+
+    // Normalize phone (10 digits for South Africa)
+    const phone = customerPhone
       .replace(/\s+/g, "")
       .replace(/-/g, "")
       .replace("+27", "0");
-    if (phone.length !== 10 || !/^\d+$/.test(phone)) {
-      return NextResponse.json(
-        { error: "Phone number must be exactly 10 digits" },
-        { status: 400 }
-      );
-    }
 
-    // Validate date (cannot be in the past)
-    const preferredDate = new Date(data.preferred_date);
-    if (preferredDate < new Date(new Date().setHours(0, 0, 0, 0))) {
-      return NextResponse.json(
-        { error: "Preferred date cannot be in the past" },
+    // Validate date
+    const dateValidation = validateDate(data.preferred_date);
+    if (!dateValidation.valid) {
+      const response = NextResponse.json(
+        { error: dateValidation.error },
         { status: 400 }
       );
+      return addSecurityHeaders(response);
+    }
+    const preferredDate = dateValidation.date!;
+
+    // Validate time
+    const timeValidation = validateTime(data.preferred_time);
+    if (!timeValidation.valid) {
+      const response = NextResponse.json(
+        { error: timeValidation.error },
+        { status: 400 }
+      );
+      return addSecurityHeaders(response);
     }
 
     // Calculate totals
@@ -57,14 +116,21 @@ export async function POST(request: NextRequest) {
 
     // Process each item
     for (const itemInput of data.items) {
-      const { category, type, quantity, is_white } = itemInput;
+      const category = sanitizeString(itemInput.category);
+      const type = sanitizeString(itemInput.type);
+      const quantity = itemInput.quantity;
+      const is_white = Boolean(itemInput.is_white);
 
-      if (quantity < 1 || quantity > 10) {
-        return NextResponse.json(
-          { error: "Quantity must be between 1 and 10" },
+      // Validate quantity
+      const quantityValidation = validateQuantity(quantity);
+      if (!quantityValidation.valid) {
+        const response = NextResponse.json(
+          { error: quantityValidation.error },
           { status: 400 }
         );
+        return addSecurityHeaders(response);
       }
+      const validatedQuantity = quantityValidation.value!;
 
       // Get pricing from database
       const pricing = await prisma.servicePricing.findFirst({
@@ -108,7 +174,7 @@ export async function POST(request: NextRequest) {
         category: pricing.serviceCategory,
         type: pricing.serviceType,
         is_white,
-        quantity,
+        quantity: validatedQuantity,
         customer_price: parseFloat(itemPriceCustomer.toString()),
         provider_price: parseFloat(itemPriceProvider.toString()),
         commission: parseFloat(itemCommission.toString()),
@@ -147,16 +213,16 @@ export async function POST(request: NextRequest) {
     const serviceRequest = await prisma.serviceRequest.create({
       data: {
         customerId: customer.customerId,
-        customerName: data.customer_name,
-        customerEmail: data.customer_email,
+        customerName: customerName,
+        customerEmail: customerEmail,
         customerPhone: phone,
-        customerAddress: data.customer_address,
-        unitNumber: data.unit_number,
-        complexName: data.complex_name,
-        accessInstructions: data.access_instructions,
+        customerAddress: customerAddress,
+        unitNumber: unitNumber,
+        complexName: complexName,
+        accessInstructions: accessInstructions,
         preferredDate: preferredDate,
         preferredTime: preferredTime,
-        additionalNotes: data.additional_notes,
+        additionalNotes: additionalNotes,
         selectedItems: JSON.stringify(selectedItemsArray),
         totalCustomerPaid: parseFloat(totalCustomerPaid.toString()),
         totalProviderPayout: parseFloat(totalProviderPayout.toString()),
@@ -165,9 +231,23 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // Log booking creation
+    await logAuditEvent({
+      action: "booking_created",
+      userEmail: customerEmail,
+      resourceType: "service_request",
+      resourceId: serviceRequest.requestId,
+      details: {
+        totalAmount: parseFloat(totalCustomerPaid.toString()),
+        itemCount: selectedItemsArray.length,
+      },
+      timestamp: new Date(),
+      ipAddress: getClientIp(request),
+    });
+
     // Send emails
     const templates = generateEmailTemplates();
-    const customerEmail = templates.customerConfirmation({
+    const customerEmailTemplate = templates.customerConfirmation({
       customerName: data.customer_name,
       requestId: serviceRequest.requestId,
       totalAmount: parseFloat(totalCustomerPaid.toString()),
@@ -176,8 +256,8 @@ export async function POST(request: NextRequest) {
     });
     await sendEmail({
       to: data.customer_email,
-      subject: customerEmail.subject,
-      html: customerEmail.html,
+      subject: customerEmailTemplate.subject,
+      html: customerEmailTemplate.html,
     });
 
     const adminEmail = templates.adminAlert({
@@ -191,7 +271,7 @@ export async function POST(request: NextRequest) {
       html: adminEmail.html,
     });
 
-    return NextResponse.json(
+    const response = NextResponse.json(
       {
         message: "Service request created successfully",
         request_id: serviceRequest.requestId,
@@ -199,12 +279,17 @@ export async function POST(request: NextRequest) {
       },
       { status: 201 }
     );
+    addSecurityHeaders(response);
+    response.headers.set("X-RateLimit-Limit", "10");
+    response.headers.set("X-RateLimit-Remaining", rateLimitResult.remaining.toString());
+    return response;
   } catch (error: any) {
     console.error("Service request creation error:", error);
-    return NextResponse.json(
+    const response = NextResponse.json(
       { error: error.message || "Failed to create service request" },
       { status: 500 }
     );
+    return addSecurityHeaders(response);
   }
 }
 
@@ -212,9 +297,9 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const status = searchParams.get("status");
-    const category = searchParams.get("category");
-    const search = searchParams.get("search");
-    const customerEmail = searchParams.get("customerEmail")?.trim();
+    const category = searchParams.get("category") ? sanitizeString(searchParams.get("category")) : null;
+    const search = searchParams.get("search") ? sanitizeString(searchParams.get("search")) : null;
+    const customerEmail = searchParams.get("customerEmail") ? sanitizeEmail(searchParams.get("customerEmail")!.trim()) : undefined;
 
     console.log(
       "GET /api/service-requests - customerEmail param:",
@@ -299,12 +384,14 @@ export async function GET(request: NextRequest) {
       requests.length,
       "requests"
     );
-    return NextResponse.json(requests);
+    const response = NextResponse.json(requests);
+    return addSecurityHeaders(response);
   } catch (error: any) {
     console.error("Get service requests error:", error);
-    return NextResponse.json(
+    const response = NextResponse.json(
       { error: "Failed to fetch service requests" },
       { status: 500 }
     );
+    return addSecurityHeaders(response);
   }
 }

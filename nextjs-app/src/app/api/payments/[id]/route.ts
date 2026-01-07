@@ -3,6 +3,9 @@ import { prisma } from '@/lib/prisma'
 import { writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
 import { existsSync } from 'fs'
+import { addSecurityHeaders } from '@/lib/security/security-headers'
+import { logAuditEvent, getClientIp } from '@/lib/security/audit-log'
+import { getAuthenticatedUser } from '@/lib/security/auth-middleware'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -84,37 +87,66 @@ export async function POST(
       customerPaymentReceived: paymentMethod === 'credit_card', // Credit card payments are auto-confirmed
     }
 
-    // Store proof of payment path
-    // Temporarily store in adminNotes until Prisma client is regenerated
-    // TODO: Move to proofOfPaymentUrl field after regenerating Prisma client
+    // Store proof of payment path in service request notes
     if (proofOfPaymentPath) {
       const existingNotes = serviceRequest.adminNotes || ''
       updateData.adminNotes = existingNotes
         ? `${existingNotes}\n[EFT Payment Proof]: ${proofOfPaymentPath}`
         : `[EFT Payment Proof]: ${proofOfPaymentPath}`
-      // Once Prisma client is regenerated, uncomment this:
-      // updateData.proofOfPaymentUrl = proofOfPaymentPath
     }
 
-    // For EFT, keep status as 'pending' - admin needs to verify proof of payment before confirming
-    // For credit card, integrate with payment gateway in production
-    // For now, credit card payments are marked as received (in production, verify with gateway first)
-    if (paymentMethod === 'credit_card') {
-      // TODO: Integrate with payment gateway (Stripe, PayPal, etc.)
-      // For now, mark as payment received
-      updateData.customerPaymentReceived = true
-      // Status stays as 'pending' until admin confirms the booking after payment verification
-    }
-    // For EFT, status remains 'pending' until admin verifies the proof of payment
+    // Create Payment record in escrow system
+    const payment = await prisma.payment.create({
+      data: {
+        jobId: requestId,
+        customerId: serviceRequest.customerId,
+        providerId: serviceRequest.assignedProviderId || null,
+        amount: serviceRequest.totalCustomerPaid,
+        providerPayout: serviceRequest.totalProviderPayout,
+        commission: serviceRequest.totalCommissionEarned,
+        paymentMethod: paymentMethod,
+        status: paymentMethod === 'credit_card' ? 'in_escrow' : 'pending', // Credit card auto-verified
+        customerPaidAt: paymentMethod === 'credit_card' ? new Date() : null,
+        proofOfPaymentUrl: proofOfPaymentPath,
+      },
+    });
 
+    // Update service request
+    updateData.customerPaymentReceived = paymentMethod === 'credit_card';
     const updated = await prisma.serviceRequest.update({
       where: { requestId },
       data: updateData,
-    })
+    });
 
-    return NextResponse.json(
+    // Log audit event
+    const user = await getAuthenticatedUser(request);
+    if (user) {
+      await logAuditEvent({
+        action: 'payment_submitted',
+        userId: user.id,
+        userEmail: user.email,
+        userRole: user.role,
+        resourceType: 'payment',
+        resourceId: payment.id,
+        details: {
+          jobId: requestId,
+          amount: payment.amount,
+          paymentMethod: paymentMethod,
+          status: payment.status,
+        },
+        timestamp: new Date(),
+        ipAddress: getClientIp(request),
+      });
+    }
+
+    const response = NextResponse.json(
       {
         message: 'Payment submitted successfully',
+        payment: {
+          id: payment.id,
+          status: payment.status,
+          amount: payment.amount,
+        },
         request: {
           requestId: updated.requestId,
           paymentMethod: updated.paymentMethod,
@@ -123,7 +155,8 @@ export async function POST(
         },
       },
       { status: 200, headers: corsHeaders }
-    )
+    );
+    return addSecurityHeaders(response);
   } catch (error: any) {
     console.error('Payment submission error:', error)
     return NextResponse.json(

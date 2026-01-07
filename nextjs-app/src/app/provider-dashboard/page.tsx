@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { serviceRequestApi, providerApi } from "@/lib/api";
+import { serviceRequestApi, providerApi, trustScoreApi, reviewApi } from "@/lib/api";
 import { formatCurrency } from "@/lib/utils";
 
 export default function ProviderDashboardPage() {
@@ -35,6 +35,16 @@ export default function ProviderDashboardPage() {
       setProvider(providerData);
     }
   }, [providerData]);
+
+  // Fetch trust score
+  const { data: trustScoreData, isLoading: isLoadingTrustScore } = useQuery({
+    queryKey: ["trust-score", provider?.id],
+    queryFn: async () => {
+      if (!provider?.id) return null;
+      return await trustScoreApi.getByProviderId(provider.id);
+    },
+    enabled: !!provider?.id,
+  });
 
   // Fetch available jobs (broadcasted/interested jobs that are not assigned)
   // Show ALL broadcasted/interested jobs to ALL providers - they can show interest
@@ -140,6 +150,28 @@ export default function ProviderDashboardPage() {
     }
   };
 
+  // Confirm completion mutation
+  const confirmCompletionMutation = useMutation({
+    mutationFn: (requestId: number) => serviceRequestApi.confirmCompletion(requestId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["provider-jobs"] });
+      alert("Completion confirmed successfully!");
+    },
+    onError: (error: any) => {
+      alert(error.message || "Failed to confirm completion");
+    },
+  });
+
+  // Fetch reviews for provider's jobs
+  const { data: providerReviews } = useQuery({
+    queryKey: ["provider-reviews", provider?.id],
+    queryFn: async () => {
+      if (!provider?.id) return [];
+      return await reviewApi.getAll({ providerId: provider.id });
+    },
+    enabled: !!provider?.id,
+  });
+
   // Calculate revenue and next payout
   const calculateStats = () => {
     if (!acceptedJobs)
@@ -240,7 +272,42 @@ export default function ProviderDashboardPage() {
 
       {/* Stats Cards */}
       <main className="max-w-6xl mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {/* Trust Score Card */}
+          <div className="bg-gradient-to-br from-[#8B5CF6] to-[#6D28D9] rounded-2xl p-6 text-white shadow-xl">
+            <h3 className="text-sm font-semibold text-white/90 mb-2">
+              Trust Score
+            </h3>
+            {isLoadingTrustScore ? (
+              <div className="animate-pulse">
+                <div className="h-8 bg-white/20 rounded mb-2"></div>
+                <div className="h-4 bg-white/20 rounded w-3/4"></div>
+              </div>
+            ) : trustScoreData ? (
+              <>
+                <p className="text-3xl font-bold">
+                  {Math.round(trustScoreData.trustScore || 0)}
+                </p>
+                <div className="mt-2">
+                  <div className="w-full bg-white/20 rounded-full h-2 mb-1">
+                    <div
+                      className="bg-white rounded-full h-2 transition-all"
+                      style={{
+                        width: `${trustScoreData.trustScore || 0}%`,
+                      }}
+                    ></div>
+                  </div>
+                  <p className="text-xs text-white/80">
+                    {trustScoreData.totalJobs || 0} jobs •{" "}
+                    {Math.round((trustScoreData.completionRate || 0) * 100)}% completion
+                  </p>
+                </div>
+              </>
+            ) : (
+              <p className="text-lg">Not available</p>
+            )}
+          </div>
+
           <div className="bg-gradient-to-br from-[#2563EB] to-[#1E40AF] rounded-2xl p-6 text-white shadow-xl">
             <h3 className="text-sm font-semibold text-white/90 mb-2">
               Total Revenue
@@ -281,6 +348,65 @@ export default function ProviderDashboardPage() {
             <p className="text-sm text-white/80 mt-2">In progress</p>
           </div>
         </div>
+
+        {/* Trust Score Details Section */}
+        {trustScoreData && (
+          <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100 mb-8">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">
+              Trust Score Breakdown
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="bg-gray-50 rounded-xl p-4">
+                <p className="text-sm text-gray-600 mb-1">Reliability</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {Math.round(trustScoreData.reliabilityScore || 0)}
+                </p>
+                <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+                  <div
+                    className="bg-blue-500 rounded-full h-2"
+                    style={{
+                      width: `${trustScoreData.reliabilityScore || 0}%`,
+                    }}
+                  ></div>
+                </div>
+              </div>
+              <div className="bg-gray-50 rounded-xl p-4">
+                <p className="text-sm text-gray-600 mb-1">Completion Rate</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {Math.round((trustScoreData.completionRate || 0) * 100)}%
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {trustScoreData.completedJobs || 0} / {trustScoreData.totalJobs || 0} jobs
+                </p>
+              </div>
+              <div className="bg-gray-50 rounded-xl p-4">
+                <p className="text-sm text-gray-600 mb-1">Cancellation Rate</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {Math.round((trustScoreData.cancellationRate || 0) * 100)}%
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {trustScoreData.cancelledJobs || 0} cancelled
+                </p>
+              </div>
+              <div className="bg-gray-50 rounded-xl p-4">
+                <p className="text-sm text-gray-600 mb-1">Average Rating</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {(trustScoreData.averageRating || 0).toFixed(1)}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {trustScoreData.totalReviews || 0} reviews
+                </p>
+              </div>
+            </div>
+            <div className="mt-6 p-4 bg-blue-50 rounded-xl border border-blue-200">
+              <p className="text-sm text-blue-800">
+                <strong>Note:</strong> Your trust score is automatically calculated based on your job performance, 
+                completion rate, cancellation rate, customer ratings, and verification status. 
+                You cannot manually edit your trust score.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Available Jobs Section */}
         <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100 mb-8">
@@ -539,6 +665,63 @@ export default function ProviderDashboardPage() {
                       {formatCurrency(job.totalProviderPayout || 0)}
                     </p>
                   </div>
+
+                  {/* Completion Confirmation & Review Section */}
+                  {(job.status === "assigned" || job.status === "confirmed" || job.status === "in_progress" || job.status === "completed" || job.providerConfirmedCompletion) && (
+                    <div className="mt-4 pt-4 border-t border-gray-200 space-y-3">
+                      {/* Completion Confirmation */}
+                      {(!job.providerConfirmedCompletion && job.status !== "completed") && (
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                          <p className="text-sm text-blue-800 font-semibold mb-2">Confirm Job Completion</p>
+                          <p className="text-xs text-blue-600 mb-3">Let us know when you have completed the service.</p>
+                          <button
+                            onClick={() => {
+                              if (confirm("Confirm that you have completed this job?")) {
+                                confirmCompletionMutation.mutate(job.requestId);
+                              }
+                            }}
+                            disabled={confirmCompletionMutation.isPending}
+                            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white font-semibold py-2 px-4 rounded-lg transition-all"
+                          >
+                            {confirmCompletionMutation.isPending ? "Confirming..." : "✓ Confirm Completion"}
+                          </button>
+                        </div>
+                      )}
+
+                      {job.providerConfirmedCompletion && (
+                        <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                          <p className="text-sm text-green-800 font-semibold">✓ You confirmed completion</p>
+                          {job.customerConfirmedCompletion ? (
+                            <p className="text-xs text-green-600 mt-1">Both parties confirmed - Job completed!</p>
+                          ) : (
+                            <p className="text-xs text-green-600 mt-1">Waiting for customer confirmation</p>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Review Button - Available when at least one party confirmed */}
+                      {(job.providerConfirmedCompletion || job.customerConfirmedCompletion || job.status === "completed") && (
+                        <div>
+                          {providerReviews?.some((r: any) => r.jobId === job.requestId && r.reviewedBy === "provider") ? (
+                            <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                              <p className="text-sm text-green-800 font-semibold">✓ Review Submitted</p>
+                              <p className="text-xs text-green-600 mt-1">Thank you for your feedback!</p>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => {
+                                // TODO: Open review modal for provider to rate customer
+                                alert("Review modal for providers coming soon! You can rate the customer here.");
+                              }}
+                              className="w-full bg-[#2563EB] hover:bg-[#1E40AF] text-white font-semibold py-2 px-4 rounded-lg transition-all"
+                            >
+                              Rate Customer
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {job.additionalNotes && (
                     <div className="mt-4 pt-4 border-t border-gray-200">
